@@ -34,3 +34,7 @@ alter table answers enable row level security;
 create policy "Allow all on sessions" on sessions for all using (true) with check (true);
 create policy "Allow all on questions" on questions for all using (true) with check (true);
 create policy "Allow all on answers" on answers for all using (true) with check (true);
+
+-- HeyGen video columns (run if upgrading an existing schema)
+alter table questions add column if not exists heygen_video_id text;
+alter table questions add column if not exists video_url text;

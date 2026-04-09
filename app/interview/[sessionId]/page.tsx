@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { countFillers, rankFillers } from '@/lib/fillerWords'
 
 type Question = {
   id: string
@@ -334,9 +335,22 @@ export default function InterviewPage() {
                 rows={7}
                 className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors text-sm leading-relaxed"
               />
-              <p className="text-xs text-gray-600">
-                {transcript.trim().split(/\s+/).filter(Boolean).length} words
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-600">
+                  {transcript.trim().split(/\s+/).filter(Boolean).length} words
+                </p>
+                {(() => {
+                  const { total, breakdown } = countFillers(transcript)
+                  if (total === 0) return null
+                  const top = rankFillers([{ total, breakdown }])[0]
+                  return (
+                    <p className="text-xs text-yellow-600/80">
+                      {total} filler word{total !== 1 ? 's' : ''} detected
+                      {top ? <span className="text-yellow-700/60"> · "{top.word}" ×{top.count}</span> : null}
+                    </p>
+                  )
+                })()}
+              </div>
             </div>
 
             <div className="flex items-center gap-3">

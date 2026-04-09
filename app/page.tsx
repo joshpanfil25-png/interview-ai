@@ -1,11 +1,37 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
+import { loadHistory } from '@/lib/history'
+import type { HistoryEntry } from '@/lib/history'
+
+const INTERVIEW_TYPES = [
+  'General',
+  'Finance',
+  'Consulting',
+  'Tech',
+  'Investment Banking',
+  'Private Equity',
+  'Real Estate',
+  'Marketing',
+  'Sales',
+  'Healthcare',
+  'Med School',
+  'PA School',
+  'Law School',
+  'MBA',
+  'Accounting',
+  'Operations',
+  'Human Resources',
+  'Nonprofit',
+  'Government',
+  'Coffee Chat',
+]
 
 export default function Home() {
   const router = useRouter()
+  const [interviewType, setInterviewType] = useState('General')
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -15,6 +41,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null)
+
+  // Hydrate from localStorage after mount (avoids SSR mismatch)
+  useEffect(() => {
+    setHistory(loadHistory().slice(0, 5))
+  }, [])
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const pdfjsLib = await import('pdfjs-dist')
@@ -87,11 +119,12 @@ export default function Home() {
     try {
       const sessionId = uuidv4()
       localStorage.setItem('sessionId', sessionId)
+      localStorage.setItem(`session_meta_${sessionId}`, JSON.stringify({ company, role, interviewType }))
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId }),
+        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId, interviewType }),
       })
 
       if (!res.ok) {
@@ -107,8 +140,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-xl">
+    <main className="min-h-screen bg-gray-950 py-12 px-6">
+      <div className="w-full max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 mb-4">
@@ -122,6 +155,27 @@ export default function Home() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Interview Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Interview Type</label>
+            <div className="flex flex-wrap gap-2">
+              {INTERVIEW_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setInterviewType(type)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    interviewType === type
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-300'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">Company</label>
@@ -225,6 +279,84 @@ export default function Home() {
             )}
           </button>
         </form>
+
+          {/* Past Interviews */}
+          {history && history.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Past Interviews</h2>
+                <span className="text-xs text-gray-600">{history.length} session{history.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {history.map((entry) => {
+                  const date = new Date(entry.date)
+                  const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  const scoreColor = entry.overallScore >= 8 ? 'text-green-400' : entry.overallScore >= 6 ? 'text-yellow-400' : 'text-red-400'
+                  const dims = [
+                    { label: 'Clarity',     val: entry.scores.clarity },
+                    { label: 'Confidence',  val: entry.scores.confidence },
+                    { label: 'Structure',   val: entry.scores.structure },
+                    { label: 'Relevance',   val: entry.scores.relevance },
+                  ]
+                  return (
+                    <div
+                      key={entry.sessionId}
+                      onClick={() => router.push(`/results/${entry.sessionId}`)}
+                      className="bg-gray-900 border border-gray-800 rounded-2xl p-4 cursor-pointer hover:border-gray-700 transition-colors group"
+                    >
+                      {/* Top row */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <p className="text-sm font-semibold text-white truncate">{entry.company}</p>
+                            <span className="text-gray-600 text-sm">·</span>
+                            <p className="text-sm text-gray-400 truncate">{entry.role}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+                              {entry.interviewType}
+                            </span>
+                            <span className="text-xs text-gray-600">{dateStr}</span>
+                            {entry.fillerCount > 0 && (
+                              <span className="text-xs text-yellow-700/80">
+                                {entry.fillerCount} filler{entry.fillerCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* Score */}
+                        <div className="flex flex-col items-end shrink-0">
+                          <div className="flex items-baseline gap-0.5">
+                            <span className={`text-2xl font-bold tabular-nums ${scoreColor}`}>{entry.overallScore}</span>
+                            <span className="text-xs text-gray-600">/10</span>
+                          </div>
+                          <span className="text-xs text-gray-600 group-hover:text-gray-500 transition-colors">View →</span>
+                        </div>
+                      </div>
+
+                      {/* Score bars */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {dims.map(({ label, val }) => {
+                          const barColor = val >= 8 ? 'bg-green-500' : val >= 6 ? 'bg-yellow-500' : 'bg-red-500'
+                          return (
+                            <div key={label}>
+                              <div className="flex justify-between text-xs mb-0.5">
+                                <span className="text-gray-600">{label}</span>
+                                <span className="text-gray-500 tabular-nums">{val}</span>
+                              </div>
+                              <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${val * 10}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
       </div>
     </main>
   )

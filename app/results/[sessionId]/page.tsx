@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import type { EvaluationResult } from '@/app/api/evaluate/route'
+import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evaluate/route'
 import { supabase } from '@/lib/supabase'
+import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
+import { saveHistoryEntry } from '@/lib/history'
 
 export default function ResultsPage() {
   const router = useRouter()
@@ -15,6 +17,10 @@ export default function ResultsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
+  const [emailOpen, setEmailOpen] = useState(false)
+  const [emailAddress, setEmailAddress] = useState('')
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [emailError, setEmailError] = useState('')
 
   useEffect(() => {
     async function evaluate() {
@@ -48,6 +54,62 @@ export default function ResultsPage() {
       .then(({ data }) => { if (data) setSessionData(data) })
   }, [sessionId])
 
+  // Save to localStorage history once evaluation + session data are both ready
+  useEffect(() => {
+    if (!result || !sessionData) return
+
+    const answers = result.evaluations.map((e) => e.answer)
+    const perAnswer = countFillersPerAnswer(answers)
+    const totalFillers = perAnswer.reduce((s, f) => s + f.total, 0)
+
+    // Average each dimension across all questions
+    const count = result.evaluations.length || 1
+    const avgScores = result.evaluations.reduce(
+      (acc, ev) => ({
+        clarity:    acc.clarity    + ev.scores.clarity    / count,
+        confidence: acc.confidence + ev.scores.confidence / count,
+        structure:  acc.structure  + ev.scores.structure  / count,
+        relevance:  acc.relevance  + ev.scores.relevance  / count,
+      }),
+      { clarity: 0, confidence: 0, structure: 0, relevance: 0 }
+    )
+
+    // Interview type was stored in session meta at form-submit time
+    let interviewType = 'General'
+    try {
+      const metaRaw = localStorage.getItem(`session_meta_${sessionId}`)
+      if (metaRaw) interviewType = JSON.parse(metaRaw).interviewType ?? 'General'
+    } catch { /* ignore */ }
+
+    saveHistoryEntry({
+      sessionId,
+      date: new Date().toISOString(),
+      company: sessionData.company,
+      role: sessionData.role,
+      interviewType,
+      overallScore: result.overallScore,
+      scores: {
+        clarity:    Math.round(avgScores.clarity    * 10) / 10,
+        confidence: Math.round(avgScores.confidence * 10) / 10,
+        structure:  Math.round(avgScores.structure  * 10) / 10,
+        relevance:  Math.round(avgScores.relevance  * 10) / 10,
+      },
+      fillerCount: totalFillers,
+    })
+  }, [result, sessionData, sessionId])
+
+  const starRatingStyle = (rating: StarRating) => {
+    if (rating === 'present') return { bg: 'bg-green-500/15', text: 'text-green-400', border: 'border-green-500/30', dot: 'bg-green-400' }
+    if (rating === 'weak')    return { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', dot: 'bg-yellow-400' }
+    return                           { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/25',    dot: 'bg-red-400' }
+  }
+
+  const starRatingLabel = (rating: StarRating) => {
+    if (rating === 'present') return 'Present'
+    if (rating === 'weak')    return 'Weak'
+    return 'Missing'
+  }
+
   const scoreColor = (score: number) => {
     if (score >= 8) return 'text-green-400'
     if (score >= 6) return 'text-yellow-400'
@@ -66,6 +128,46 @@ export default function ResultsPage() {
     if (score >= 7) return { grade: 'B', label: 'Good' }
     if (score >= 6) return { grade: 'C', label: 'Fair' }
     return { grade: 'D', label: 'Needs Work' }
+  }
+
+  // ── Filler word analysis (client-side, no extra API call) ──────
+  const fillerData = useMemo(() => {
+    if (!result) return null
+    const answers = result.evaluations.map((e) => e.answer)
+    const perAnswer = countFillersPerAnswer(answers)
+    const ranked = rankFillers(perAnswer)
+    const totalFillers = perAnswer.reduce((s, f) => s + f.total, 0)
+    const totalWords = answers.reduce((s, a) => s + wordCount(a), 0)
+    const score = fluencyScore(totalFillers, totalWords)
+    const maxPerAnswer = Math.max(1, ...perAnswer.map((f) => f.total))
+    return { perAnswer, ranked, totalFillers, totalWords, score, maxPerAnswer }
+  }, [result])
+
+  const sendEmail = async () => {
+    if (!emailAddress.trim() || !result || !sessionData) return
+    setEmailStatus('sending')
+    setEmailError('')
+    try {
+      const res = await fetch('/api/email-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: emailAddress.trim(),
+          company: sessionData.company,
+          role: sessionData.role,
+          result,
+          fillerCount: fillerData?.totalFillers ?? 0,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to send email')
+      }
+      setEmailStatus('sent')
+    } catch (err: any) {
+      setEmailError(err.message || 'Something went wrong')
+      setEmailStatus('error')
+    }
   }
 
   const generateShareCard = () => {
@@ -398,6 +500,47 @@ export default function ResultsPage() {
                   ))}
                 </div>
 
+                {/* STAR Analysis */}
+                <div className="border border-gray-700/60 rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">STAR Analysis</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-500">Score</span>
+                      <span className={`text-sm font-bold tabular-nums ${ev.star.starScore >= 3 ? 'text-green-400' : ev.star.starScore >= 2 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        {ev.star.starScore}
+                      </span>
+                      <span className="text-xs text-gray-600">/4</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    {(['situation', 'task', 'action', 'result'] as const).map((component) => {
+                      const rating = ev.star[component] as StarRating
+                      const style = starRatingStyle(rating)
+                      return (
+                        <div key={component} className={`rounded-lg border px-3 py-2 ${style.bg} ${style.border}`}>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            {component[0].toUpperCase()}
+                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
+                            <span className={`text-xs font-medium ${style.text}`}>{starRatingLabel(rating)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {ev.star.starCoaching && (
+                    <div className="flex gap-2 bg-indigo-500/8 border border-indigo-500/20 rounded-lg px-3 py-2">
+                      <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-xs text-indigo-300 leading-relaxed">{ev.star.starCoaching}</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Answer preview */}
                 <div className="bg-gray-800/50 rounded-xl p-3">
                   <p className="text-xs text-gray-500 font-medium mb-1">Your answer</p>
@@ -407,6 +550,121 @@ export default function ResultsPage() {
             ))}
           </div>
         </div>
+
+        {/* Filler Words */}
+        {fillerData && (
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0">
+                  {/* mic icon */}
+                  <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-white font-semibold text-sm">Filler Words</h2>
+                  <p className="text-xs text-gray-500">A habit you may not have noticed</p>
+                </div>
+              </div>
+              {/* Fluency score badge */}
+              <div className="flex flex-col items-end shrink-0">
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-2xl font-bold tabular-nums ${fillerData.score >= 8 ? 'text-green-400' : fillerData.score >= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                    {fillerData.score}
+                  </span>
+                  <span className="text-xs text-gray-600">/10</span>
+                </div>
+                <span className="text-xs text-gray-500">Fluency</span>
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-5">
+              {/* Summary callout */}
+              {fillerData.totalFillers === 0 ? (
+                <div className="flex items-center gap-2.5 bg-green-500/8 border border-green-500/20 rounded-xl px-4 py-3">
+                  <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-green-300">No filler words detected — clean, confident delivery.</p>
+                </div>
+              ) : (
+                <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 border ${
+                  fillerData.score >= 7
+                    ? 'bg-yellow-500/8 border-yellow-500/20'
+                    : 'bg-red-500/8 border-red-500/20'
+                }`}>
+                  <svg className={`w-4 h-4 shrink-0 mt-0.5 ${fillerData.score >= 7 ? 'text-yellow-400' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className={`text-sm leading-relaxed ${fillerData.score >= 7 ? 'text-yellow-300' : 'text-red-300'}`}>
+                    You used <span className="font-semibold">{fillerData.totalFillers} filler word{fillerData.totalFillers !== 1 ? 's' : ''}</span> across {result!.evaluations.length} answers
+                    {fillerData.totalWords > 0 && (
+                      <> — about <span className="font-semibold">1 every {Math.round(fillerData.totalWords / fillerData.totalFillers)} words</span></>
+                    )}.
+                    {fillerData.score < 5
+                      ? ' This is a significant pattern that interviewers notice. Slow down and replace fillers with a brief pause.'
+                      : ' A few fillers are normal, but practice catching yourself to sound more polished.'}
+                  </p>
+                </div>
+              )}
+
+              {/* Per-question bars */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">By Question</p>
+                <div className="flex flex-col gap-2">
+                  {result!.evaluations.map((ev, i) => {
+                    const count = fillerData.perAnswer[i].total
+                    const barPct = fillerData.maxPerAnswer > 0 ? (count / fillerData.maxPerAnswer) * 100 : 0
+                    const barColor = count === 0 ? 'bg-gray-700' : count <= 2 ? 'bg-yellow-500' : 'bg-red-500'
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-xs text-gray-500 w-4 shrink-0 text-right">Q{i + 1}</span>
+                        <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                            style={{ width: `${Math.max(barPct, count > 0 ? 4 : 0)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium w-14 shrink-0 ${count === 0 ? 'text-gray-600' : count <= 2 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {count === 0 ? 'none' : `${count} filler${count !== 1 ? 's' : ''}`}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Top filler words */}
+              {fillerData.ranked.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Most Used</p>
+                  <div className="flex flex-wrap gap-2">
+                    {fillerData.ranked.map(({ word, count }, i) => (
+                      <div
+                        key={word}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${
+                          i === 0
+                            ? 'bg-red-500/12 border-red-500/25 text-red-300'
+                            : 'bg-gray-800 border-gray-700 text-gray-400'
+                        }`}
+                      >
+                        <span>"{word}"</span>
+                        <span className={`font-bold ${i === 0 ? 'text-red-400' : 'text-gray-500'}`}>×{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-700 leading-relaxed">
+                Detection covers: um, uh, like, so, literally, basically, right, you know, kind of, sort of.
+                Some may reflect intentional usage — use as a directional signal, not an exact count.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Feedback Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -467,7 +725,8 @@ export default function ResultsPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3 justify-center pb-8">
+        <div className="flex flex-col items-center gap-4 pb-8">
+        <div className="flex flex-wrap gap-3 justify-center">
           <button
             onClick={generateShareCard}
             disabled={isGenerating || !sessionData}
@@ -505,6 +764,60 @@ export default function ResultsPage() {
           >
             New Interview
           </button>
+
+          <button
+            onClick={() => { setEmailOpen((o) => !o); setEmailStatus('idle'); setEmailError('') }}
+            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-colors border border-gray-700"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Email My Results
+          </button>
+        </div>
+
+        {/* Email input panel */}
+        {emailOpen && (
+          <div className="w-full max-w-sm">
+            {emailStatus === 'sent' ? (
+              <div className="flex items-center gap-2.5 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-green-300">Results sent to <span className="font-medium">{emailAddress}</span></p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendEmail()}
+                    placeholder="your@email.com"
+                    className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                    autoFocus
+                  />
+                  <button
+                    onClick={sendEmail}
+                    disabled={emailStatus === 'sending' || !emailAddress.trim()}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm"
+                  >
+                    {emailStatus === 'sending' ? (
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    ) : 'Send'}
+                  </button>
+                </div>
+                {emailStatus === 'error' && (
+                  <p className="text-xs text-red-400 px-1">{emailError}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         </div>
       </div>
     </div>

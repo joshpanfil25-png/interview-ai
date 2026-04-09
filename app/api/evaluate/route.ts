@@ -4,6 +4,17 @@ import { supabase } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+export type StarRating = 'present' | 'weak' | 'missing'
+
+export type StarAnalysis = {
+  situation: StarRating
+  task: StarRating
+  action: StarRating
+  result: StarRating
+  starScore: number
+  starCoaching: string
+}
+
 export type QuestionEvaluation = {
   question: string
   answer: string
@@ -14,6 +25,7 @@ export type QuestionEvaluation = {
     relevance: number
   }
   average: number
+  star: StarAnalysis
 }
 
 export type EvaluationResult = {
@@ -62,13 +74,29 @@ export async function POST(req: NextRequest) {
 
 ${qaPairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).join('\n\n')}
 
-Score each answer on a scale of 1-10 for: Clarity, Confidence, Structure, and Relevance.
+For each answer, do two things:
+
+1. Score it 1-10 for: Clarity, Confidence, Structure, and Relevance.
+
+2. Analyze whether the answer uses the STAR method (Situation, Task, Action, Result). For each of the four components, rate it as:
+   - "present" — clearly and specifically addressed
+   - "weak" — hinted at or vague but not fully developed
+   - "missing" — entirely absent
+   Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of coaching on how to improve the STAR structure for that specific answer.
 
 Return ONLY a valid JSON object with no extra text:
 {
   "evaluations": [
     {
-      "scores": { "clarity": 0, "confidence": 0, "structure": 0, "relevance": 0 }
+      "scores": { "clarity": 0, "confidence": 0, "structure": 0, "relevance": 0 },
+      "star": {
+        "situation": "present|weak|missing",
+        "task": "present|weak|missing",
+        "action": "present|weak|missing",
+        "result": "present|weak|missing",
+        "starScore": 0,
+        "starCoaching": "One sentence of specific coaching here."
+      }
     }
   ],
   "biggestMistakes": ["mistake1", "mistake2", "mistake3"],
@@ -97,17 +125,27 @@ Return ONLY a valid JSON object with no extra text:
       throw new Error('Failed to parse evaluation from Claude')
     }
 
-    // Merge question/answer data with scores
+    // Merge question/answer data with scores and STAR analysis
     const evaluations: QuestionEvaluation[] = qaPairs.map((qa, i) => {
       const scores = parsed.evaluations?.[i]?.scores || {
         clarity: 5, confidence: 5, structure: 5, relevance: 5
       }
       const avg = (scores.clarity + scores.confidence + scores.structure + scores.relevance) / 4
+      const rawStar = parsed.evaluations?.[i]?.star
+      const star: StarAnalysis = {
+        situation: rawStar?.situation || 'missing',
+        task: rawStar?.task || 'missing',
+        action: rawStar?.action || 'missing',
+        result: rawStar?.result || 'missing',
+        starScore: typeof rawStar?.starScore === 'number' ? rawStar.starScore : 0,
+        starCoaching: rawStar?.starCoaching || '',
+      }
       return {
         question: qa.question,
         answer: qa.answer,
         scores,
         average: Math.round(avg * 10) / 10,
+        star,
       }
     })
 

@@ -31,6 +31,8 @@ const INTERVIEW_TYPES = [
 export default function Home() {
   const router = useRouter()
   const [interviewType, setInterviewType] = useState('General')
+  const [firstName, setFirstName] = useState('')
+  const [email, setEmail] = useState('')
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -174,8 +176,13 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!company.trim() || !role.trim()) {
-      setError('Please fill in the company and role fields.')
+    if (!firstName.trim() || !email.trim() || !company.trim() || !role.trim()) {
+      setError('Please fill in all required fields.')
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address.')
       return
     }
 
@@ -185,7 +192,7 @@ export default function Home() {
     try {
       const sessionId = uuidv4()
       localStorage.setItem('sessionId', sessionId)
-      localStorage.setItem(`session_meta_${sessionId}`, JSON.stringify({ company, role, interviewType }))
+      localStorage.setItem(`session_meta_${sessionId}`, JSON.stringify({ company, role, interviewType, firstName, email }))
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
@@ -197,6 +204,13 @@ export default function Home() {
         const data = await res.json()
         throw new Error(data.error || 'Failed to generate questions')
       }
+
+      // Fire-and-forget analytics — never block navigation
+      fetch('/api/log-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: firstName.trim(), email: email.trim(), interviewType, company: company.trim(), role: role.trim() }),
+      }).catch(() => {})
 
       router.push(`/interview/${sessionId}`)
     } catch (err: any) {
@@ -242,9 +256,40 @@ export default function Home() {
             </div>
           </div>
 
+          {/* First Name + Email */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Company</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                First Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="e.g. Alex"
+                required
+                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@email.com"
+                required
+                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Company + Role */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Company <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={company}
@@ -254,7 +299,7 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Role</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Role <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={role}

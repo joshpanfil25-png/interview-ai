@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer'
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, company, role, result, fillerCount } = await req.json()
+    const { to, firstName, company, role, result, fillerCount, blindSpot } = await req.json()
 
     if (!to || !company || !role || !result) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -71,6 +71,9 @@ export async function POST(req: NextRequest) {
         </div>`
     }).join('')
 
+    const FORM_URL = 'https://docs.google.com/forms/d/1aCvDzFyUWJx4-KkPzQ-FINWARaYjY6f276phmf4SxAU/viewform'
+    const greeting = firstName ? `Hey ${firstName},` : 'Hey,'
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Interview AI Results</title></head>
@@ -86,6 +89,11 @@ export async function POST(req: NextRequest) {
         </div>
         <h1 style="margin:0 0 4px;color:#fff;font-size:22px;font-weight:700;">Interview AI Results</h1>
         <p style="margin:0;color:rgba(255,255,255,.7);font-size:14px;">${company} · ${role}</p>
+      </td></tr>
+
+      <!-- Greeting -->
+      <tr><td style="background:#111827;padding:24px 32px 0;border-left:1px solid #1f2937;border-right:1px solid #1f2937;">
+        <p style="margin:0;color:#e5e7eb;font-size:15px;line-height:1.6;">${greeting} Here are your Interview AI results. Keep the feedback below in mind for your next practice session.</p>
       </td></tr>
 
       <!-- Overall score -->
@@ -106,6 +114,26 @@ export async function POST(req: NextRequest) {
             ${dimRow('Relevance',  avg.relevance)}
             ${fillerCount > 0 ? `<tr><td style="padding:8px 0;color:#9ca3af;font-size:13px;">Filler words</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#facc15;font-size:13px;">${fillerCount} detected</td></tr>` : '<tr><td style="padding:8px 0;color:#9ca3af;font-size:13px;">Filler words</td><td style="padding:8px 0;text-align:right;font-weight:600;color:#4ade80;font-size:13px;">None detected</td></tr>'}
           </table>
+        </div>
+      </td></tr>
+
+      ${blindSpot?.name ? `
+      <!-- Blind Spot -->
+      <tr><td style="background:#111827;padding:0 32px 24px;border-left:1px solid #1f2937;border-right:1px solid #1f2937;">
+        <div style="background:#1c0a0a;border:1px solid #7f1d1d55;border-radius:12px;padding:20px;">
+          <p style="margin:0 0 4px;color:#ef4444;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Your Blind Spot</p>
+          <p style="margin:0 0 6px;color:#fca5a5;font-size:15px;font-weight:700;">${blindSpot.name}</p>
+          <p style="margin:0;color:#fca5a580;font-size:13px;line-height:1.6;">${blindSpot.description}</p>
+        </div>
+      </td></tr>` : ''}
+
+      <!-- Feedback form CTA -->
+      <tr><td style="background:#111827;padding:0 32px 24px;border-left:1px solid #1f2937;border-right:1px solid #1f2937;">
+        <div style="background:linear-gradient(135deg,#1e1b4b,#1a1040);border:1px solid #4338ca55;border-radius:12px;padding:24px;text-align:center;">
+          <p style="margin:0 0 8px;color:#a5b4fc;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Quick favour</p>
+          <p style="margin:0 0 16px;color:#e5e7eb;font-size:16px;font-weight:700;">Please take 60 seconds to tell us what you think</p>
+          <p style="margin:0 0 20px;color:#9ca3af;font-size:13px;line-height:1.5;">Your feedback directly shapes how we improve Interview AI. It takes under a minute.</p>
+          <a href="${FORM_URL}" style="display:inline-block;background:#6366f1;color:#ffffff;font-weight:700;font-size:14px;padding:12px 32px;border-radius:10px;text-decoration:none;">Give Feedback →</a>
         </div>
       </td></tr>
 

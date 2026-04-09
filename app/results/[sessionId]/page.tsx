@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evaluate/route'
 import { supabase } from '@/lib/supabase'
@@ -22,6 +22,8 @@ export default function ResultsPage() {
   const [emailAddress, setEmailAddress] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [emailError, setEmailError] = useState('')
+  const [autoEmailStatus, setAutoEmailStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const autoEmailSentRef = useRef(false)
 
   useEffect(() => {
     async function evaluate() {
@@ -98,6 +100,42 @@ export default function ResultsPage() {
       },
       fillerCount: totalFillers,
     })
+  }, [result, sessionData, sessionId])
+
+  // Auto-send email once evaluation + session data are ready
+  useEffect(() => {
+    if (!result || !sessionData || autoEmailSentRef.current) return
+    autoEmailSentRef.current = true
+
+    try {
+      const metaRaw = localStorage.getItem(`session_meta_${sessionId}`)
+      if (!metaRaw) return
+      const meta = JSON.parse(metaRaw)
+      const toEmail = meta.email?.trim()
+      if (!toEmail) return
+
+      const answers = result.evaluations.map((e) => e.answer)
+      const perAnswer = countFillersPerAnswer(answers)
+      const totalFillers = perAnswer.reduce((s, f) => s + f.total, 0)
+
+      fetch('/api/email-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: toEmail,
+          firstName: meta.firstName || '',
+          company: sessionData.company,
+          role: sessionData.role,
+          result,
+          fillerCount: totalFillers,
+          blindSpot: result.blindSpot,
+        }),
+      })
+        .then((r) => r.ok ? setAutoEmailStatus('sent') : setAutoEmailStatus('error'))
+        .catch(() => setAutoEmailStatus('error'))
+    } catch {
+      // ignore — never block the results page
+    }
   }, [result, sessionData, sessionId])
 
   const starRatingStyle = (rating: StarRating) => {
@@ -195,15 +233,22 @@ export default function ResultsPage() {
     setEmailStatus('sending')
     setEmailError('')
     try {
+      let firstName = ''
+      try {
+        const m = localStorage.getItem(`session_meta_${sessionId}`)
+        if (m) firstName = JSON.parse(m).firstName || ''
+      } catch {}
       const res = await fetch('/api/email-results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: emailAddress.trim(),
+          firstName,
           company: sessionData.company,
           role: sessionData.role,
           result,
           fillerCount: fillerData?.totalFillers ?? 0,
+          blindSpot: result.blindSpot,
         }),
       })
       if (!res.ok) {
@@ -499,6 +544,16 @@ export default function ResultsPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+        {/* Auto-email status banner */}
+        {autoEmailStatus === 'sent' && (
+          <div className="flex items-center gap-2.5 bg-green-500/8 border border-green-500/20 rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-green-300">Results sent to your email.</p>
+          </div>
+        )}
+
         {/* Blind Spot Callout */}
         {result.blindSpot?.name && (
           <div className="relative overflow-hidden rounded-2xl border border-red-500/20 bg-gray-900">
@@ -945,6 +1000,19 @@ export default function ResultsPage() {
             )}
           </div>
         )}
+        </div>
+
+        {/* Share Your Feedback */}
+        <div>
+          <h2 className="text-white font-semibold text-lg mb-4">Share Your Feedback</h2>
+          <iframe
+            src="https://docs.google.com/forms/d/1aCvDzFyUWJx4-KkPzQ-FINWARaYjY6f276phmf4SxAU/viewform?embedded=true"
+            width="100%"
+            height="600"
+            style={{ border: 'none', display: 'block' }}
+          >
+            Loading…
+          </iframe>
         </div>
       </div>
     </div>

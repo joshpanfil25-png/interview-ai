@@ -33,6 +33,7 @@ export default function InterviewPage() {
   const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isEvaluating, setIsEvaluating] = useState(false)
   const [error, setError] = useState('')
   const [webcamError, setWebcamError] = useState('')
   const [speechSupported, setSpeechSupported] = useState(true)
@@ -160,10 +161,18 @@ export default function InterviewPage() {
 
     if (currentIndex < questions.length - 1) {
       clearInterval(timerRef.current!)
+      recognitionRef.current?.stop()
+      setIsRecording(false)
+      setIsSaving(false)
+
+      // "Taking notes" pause — 1.2–1.8 s random to feel human
+      setIsEvaluating(true)
+      const delay = 1200 + Math.random() * 600
+      await new Promise((res) => setTimeout(res, delay))
+      setIsEvaluating(false)
+
       setCurrentIndex(currentIndex + 1)
       setTranscript('')
-      setIsRecording(false)
-      recognitionRef.current?.stop()
     } else {
       streamRef.current?.getTracks().forEach((t) => t.stop())
       router.push(`/results/${sessionId}`)
@@ -218,7 +227,34 @@ export default function InterviewPage() {
 
   // ── Main interview screen ────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-gray-950 flex flex-col relative">
+      {/* Evaluating overlay */}
+      {isEvaluating && (
+        <div className="absolute inset-0 z-50 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-end gap-1.5">
+              {[0, 160, 320].map((delay) => (
+                <div
+                  key={delay}
+                  className="w-1.5 rounded-full bg-indigo-400"
+                  style={{
+                    height: 6,
+                    animation: 'barBounce 0.9s ease-in-out infinite',
+                    animationDelay: `${delay}ms`,
+                  }}
+                />
+              ))}
+            </div>
+            <p className="text-sm font-medium text-gray-400 tracking-wide">Evaluating your response…</p>
+          </div>
+          <style>{`
+            @keyframes barBounce {
+              0%, 100% { height: 6px; opacity: .4; }
+              50%       { height: 18px; opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
       {/* Top bar */}
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -379,7 +415,7 @@ export default function InterviewPage() {
 
               <button
                 onClick={saveAnswerAndAdvance}
-                disabled={isSaving || !transcript.trim()}
+                disabled={isSaving || isEvaluating || !transcript.trim()}
                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
               >
                 {isSaving ? (

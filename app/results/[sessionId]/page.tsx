@@ -14,6 +14,7 @@ export default function ResultsPage() {
 
   const [result, setResult] = useState<EvaluationResult | null>(null)
   const [sessionData, setSessionData] = useState<{ company: string; role: string } | null>(null)
+  const [interviewType, setInterviewType] = useState('General')
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -80,6 +81,7 @@ export default function ResultsPage() {
       const metaRaw = localStorage.getItem(`session_meta_${sessionId}`)
       if (metaRaw) interviewType = JSON.parse(metaRaw).interviewType ?? 'General'
     } catch { /* ignore */ }
+    setInterviewType(interviewType)
 
     saveHistoryEntry({
       sessionId,
@@ -142,6 +144,54 @@ export default function ResultsPage() {
     const maxPerAnswer = Math.max(1, ...perAnswer.map((f) => f.total))
     return { perAnswer, ranked, totalFillers, totalWords, score, maxPerAnswer }
   }, [result])
+
+  const getBenchmark = (type: string, company: string): { score: number; label: string; sessions: string } => {
+    const co = company.toLowerCase()
+
+    // Named-company overrides (substring match)
+    const elite: [string[], { score: number; label: string; sessions: string }][] = [
+      [['goldman','morgan stanley','jp morgan','blackstone','kkr','carlyle','apollo','citadel','two sigma','bridgewater','point72','millennium'],
+       { score: 88, label: 'Top-tier finance firms', sessions: '3–4 sessions' }],
+      [['mckinsey','bain','bcg','oliver wyman','roland berger'],
+       { score: 87, label: 'MBB candidates', sessions: '3–4 sessions' }],
+      [['deloitte','pwc','kpmg','ey ','ernst & young','accenture'],
+       { score: 82, label: 'Big 4 / consulting candidates', sessions: '2–3 sessions' }],
+      [['google','meta','apple','microsoft','amazon','netflix','openai','anthropic','stripe','airbnb','uber','palantir','snowflake'],
+       { score: 83, label: 'Top-tier tech candidates', sessions: '2–3 sessions' }],
+      [['harvard','yale','stanford','columbia','upenn','duke','dartmouth','brown','johns hopkins','mayo','wharton'],
+       { score: 86, label: 'Target-school applicants', sessions: '3–4 sessions' }],
+      [['skadden','kirkland','cravath','wachtell','sullivan','latham','simpson'],
+       { score: 85, label: 'BigLaw candidates', sessions: '3–4 sessions' }],
+    ]
+    for (const [names, bench] of elite) {
+      if (names.some(n => co.includes(n))) return bench
+    }
+
+    // Vertical benchmarks
+    const byType: Record<string, { score: number; label: string; sessions: string }> = {
+      'Investment Banking':  { score: 85, label: 'IB candidates',              sessions: '3–4 sessions' },
+      'Private Equity':      { score: 86, label: 'PE candidates',              sessions: '3–4 sessions' },
+      'Consulting':          { score: 83, label: 'Consulting candidates',      sessions: '2–3 sessions' },
+      'Finance':             { score: 80, label: 'Finance candidates',         sessions: '2–3 sessions' },
+      'Law School':          { score: 81, label: 'Law school applicants',      sessions: '2–3 sessions' },
+      'MBA':                 { score: 79, label: 'MBA applicants',             sessions: '2–3 sessions' },
+      'Med School':          { score: 83, label: 'Med school applicants',      sessions: '2–3 sessions' },
+      'PA School':           { score: 79, label: 'PA school applicants',       sessions: '2–3 sessions' },
+      'Tech':                { score: 78, label: 'Tech candidates',            sessions: '2–3 sessions' },
+      'Healthcare':          { score: 76, label: 'Healthcare candidates',      sessions: '2 sessions'   },
+      'Real Estate':         { score: 75, label: 'Real estate candidates',     sessions: '2 sessions'   },
+      'Marketing':           { score: 74, label: 'Marketing candidates',       sessions: '2 sessions'   },
+      'Sales':               { score: 72, label: 'Sales candidates',           sessions: '1–2 sessions' },
+      'Accounting':          { score: 74, label: 'Accounting candidates',      sessions: '2 sessions'   },
+      'Operations':          { score: 72, label: 'Operations candidates',      sessions: '1–2 sessions' },
+      'Human Resources':     { score: 72, label: 'HR candidates',              sessions: '1–2 sessions' },
+      'Nonprofit':           { score: 70, label: 'Nonprofit candidates',       sessions: '1–2 sessions' },
+      'Government':          { score: 70, label: 'Government candidates',      sessions: '1–2 sessions' },
+      'Coffee Chat':         { score: 68, label: 'Confident networkers',       sessions: '1 session'    },
+      'General':             { score: 72, label: 'Successful candidates',      sessions: '1–2 sessions' },
+    }
+    return byType[type] ?? byType['General']
+  }
 
   const sendEmail = async () => {
     if (!emailAddress.trim() || !result || !sessionData) return
@@ -452,6 +502,22 @@ export default function ResultsPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+        {/* Blind Spot Callout */}
+        {result.blindSpot?.name && (
+          <div className="relative overflow-hidden rounded-2xl border border-red-500/20 bg-gray-900">
+            {/* Subtle red gradient wash */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/8 via-transparent to-transparent pointer-events-none" />
+            <div className="relative px-6 py-5 flex flex-col gap-2">
+              <p className="text-xs font-semibold text-red-500/70 uppercase tracking-widest">Your Blind Spot</p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-xl font-bold text-white">{result.blindSpot.name}</span>
+                <span className="text-gray-500 text-sm">—</span>
+                <span className="text-gray-300 text-sm leading-relaxed">{result.blindSpot.description}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Overall Score */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
           <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-3">Overall Score</p>
@@ -466,6 +532,70 @@ export default function ResultsPage() {
             <span className="text-gray-400 text-sm">— {label}</span>
           </div>
         </div>
+
+        {/* Goal Gradient */}
+        {(() => {
+          const bench = getBenchmark(interviewType, sessionData?.company ?? '')
+          const userScore = Math.round(result.overallScore * 10)
+          const gap = bench.score - userScore
+
+          if (gap <= 0) {
+            return (
+              <div className="flex items-center gap-3 bg-green-500/8 border border-green-500/20 rounded-2xl px-5 py-4">
+                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-300">Above benchmark</p>
+                  <p className="text-sm text-gray-400">
+                    You scored <span className="font-semibold text-white">{userScore}</span> — {bench.label} typically target {bench.score}+. Keep going.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          const urgency = gap >= 20
+            ? { color: 'border-red-500/20 bg-red-500/5', dot: 'bg-red-500/20', icon: 'text-red-400', bar: 'bg-red-500', msg: `Focused practice across ${bench.sessions} can close this.` }
+            : gap >= 10
+            ? { color: 'border-amber-500/20 bg-amber-500/5', dot: 'bg-amber-500/20', icon: 'text-amber-400', bar: 'bg-amber-500', msg: `Most users close that gap in ${bench.sessions}.` }
+            : { color: 'border-yellow-500/20 bg-yellow-500/5', dot: 'bg-yellow-500/20', icon: 'text-yellow-400', bar: 'bg-yellow-500', msg: `You're close — ${bench.sessions} should get you there.` }
+
+          const pct = Math.min(99, Math.round((userScore / bench.score) * 100))
+
+          return (
+            <div className={`border rounded-2xl px-5 py-4 flex flex-col gap-3 ${urgency.color}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white mb-0.5">
+                    You scored <span className={urgency.icon}>{userScore}</span>.{' '}
+                    {bench.label} typically score <span className="text-white">{bench.score}+</span>.
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    You're <span className="font-semibold text-white">{gap} points away</span> — {urgency.msg}
+                  </p>
+                </div>
+                <div className={`shrink-0 w-9 h-9 rounded-full ${urgency.dot} flex items-center justify-center`}>
+                  <svg className={`w-4.5 h-4.5 ${urgency.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+              </div>
+              {/* Progress bar toward benchmark */}
+              <div>
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>Your score</span>
+                  <span>Benchmark: {bench.score}</span>
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-700 ${urgency.bar}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Per-Question Breakdown */}
         <div>

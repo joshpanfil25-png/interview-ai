@@ -28,9 +28,15 @@ export type QuestionEvaluation = {
   star: StarAnalysis
 }
 
+export type BlindSpot = {
+  name: string         // short punchy title, e.g. "All Sizzle, No Steak"
+  description: string  // one sentence, specific to their answers
+}
+
 export type EvaluationResult = {
   overallScore: number
   evaluations: QuestionEvaluation[]
+  blindSpot: BlindSpot
   biggestMistakes: [string, string, string]
   improvements: [string, string, string]
   exampleBetterAnswer: string
@@ -84,6 +90,10 @@ For each answer, do two things:
    - "missing" — entirely absent
    Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of coaching on how to improve the STAR structure for that specific answer.
 
+Also identify the candidate's single most important blind spot — the one pattern across their answers that they almost certainly didn't notice themselves. This should feel uncomfortably specific, like it was written just for them. It must be grounded in something actually present in their answers (a real pattern, not a generic observation).
+
+Give it a short punchy name (2–5 words, like a chapter title) and one direct sentence that names the specific habit without softening it. Pull from concrete details in their answers.
+
 Return ONLY a valid JSON object with no extra text:
 {
   "evaluations": [
@@ -99,6 +109,10 @@ Return ONLY a valid JSON object with no extra text:
       }
     }
   ],
+  "blindSpot": {
+    "name": "Short Punchy Name",
+    "description": "One direct sentence grounded in their actual answers."
+  },
   "biggestMistakes": ["mistake1", "mistake2", "mistake3"],
   "improvements": ["improvement1", "improvement2", "improvement3"],
   "exampleBetterAnswer": "A detailed example of how to answer one of the weakest questions better"
@@ -156,6 +170,10 @@ Return ONLY a valid JSON object with no extra text:
     const result: EvaluationResult = {
       overallScore,
       evaluations,
+      blindSpot: {
+        name:        parsed.blindSpot?.name        || 'Unknown Pattern',
+        description: parsed.blindSpot?.description || '',
+      },
       biggestMistakes: parsed.biggestMistakes || ['N/A', 'N/A', 'N/A'],
       improvements: parsed.improvements || ['N/A', 'N/A', 'N/A'],
       exampleBetterAnswer: parsed.exampleBetterAnswer || '',

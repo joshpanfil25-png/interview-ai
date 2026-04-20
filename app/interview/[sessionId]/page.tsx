@@ -5,6 +5,15 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { countFillers, rankFillers } from '@/lib/fillerWords'
 
+function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  )
+}
+
 type Question = {
   id: string
   question_text: string
@@ -39,6 +48,8 @@ export default function InterviewPage() {
   const [speechSupported, setSpeechSupported] = useState(true)
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
   const [timerExpired, setTimerExpired] = useState(false)
+  const [feedback, setFeedback] = useState<{ score: number; didWell: string; improve: string } | null>(null)
+  const [timerResetKey, setTimerResetKey] = useState(0)
 
   // ── Refs ────────────────────────────────────────────────────
   const webcamRef = useRef<HTMLVideoElement>(null)
@@ -109,7 +120,7 @@ export default function InterviewPage() {
     }, 1000)
 
     return () => clearInterval(timerRef.current!)
-  }, [currentIndex, isLoading, questions.length])
+  }, [currentIndex, isLoading, questions.length, timerResetKey])
 
   // ── Speech recognition ───────────────────────────────────────
   const startRecording = useCallback(() => {
@@ -138,8 +149,8 @@ export default function InterviewPage() {
     setIsRecording(false)
   }, [])
 
-  // ── Save answer and advance ───────────────────────────────────
-  const saveAnswerAndAdvance = async () => {
+  // ── Submit answer → fetch instant feedback ────────────────────
+  const handleNextClick = async () => {
     if (!transcript.trim()) {
       setError('Please record or type an answer before continuing.')
       return
@@ -147,7 +158,14 @@ export default function InterviewPage() {
     setError('')
     setIsSaving(true)
 
+    // Stop recording if active
+    recognitionRef.current?.stop()
+    setIsRecording(false)
+    clearInterval(timerRef.current!)
+
     const currentQuestion = questions[currentIndex]
+
+    // Upsert answer (overwrites any previous attempt for this question)
     const { error: saveError } = await supabase.from('answers').upsert(
       { session_id: sessionId, question_id: currentQuestion.id, answer_text: transcript.trim() },
       { onConflict: 'session_id,question_id' }
@@ -159,31 +177,53 @@ export default function InterviewPage() {
       return
     }
 
-    if (currentIndex < questions.length - 1) {
-      clearInterval(timerRef.current!)
-      recognitionRef.current?.stop()
-      setIsRecording(false)
-      setIsSaving(false)
+    setIsSaving(false)
+    setIsEvaluating(true)
 
-      // "Taking notes" pause — 1.2–1.8 s random to feel human
-      setIsEvaluating(true)
-      const delay = 1200 + Math.random() * 600
-      await new Promise((res) => setTimeout(res, delay))
+    try {
+      const res = await fetch('/api/evaluate-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: currentQuestion.question_text,
+          answer: transcript.trim(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Feedback request failed')
+      setFeedback(data)
+    } catch {
+      // If feedback fails, just advance without showing the panel
+      setFeedback(null)
+      advanceQuestion()
+    } finally {
       setIsEvaluating(false)
+    }
+  }
 
+  // ── Try Again — re-record the same question ───────────────────
+  const handleTryAgain = () => {
+    setFeedback(null)
+    setTranscript('')
+    setTimerResetKey((k) => k + 1)
+  }
+
+  // ── Advance to next question or finish ────────────────────────
+  const advanceQuestion = () => {
+    setFeedback(null)
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setTranscript('')
     } else {
       streamRef.current?.getTracks().forEach((t) => t.stop())
       router.push(`/results/${sessionId}`)
     }
-    setIsSaving(false)
   }
 
   // ── Loading screen ───────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-400">Loading your interview...</p>
@@ -194,12 +234,12 @@ export default function InterviewPage() {
 
   if (error && questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-md shadow-indigo-600/25"
           >
             Go Back
           </button>
@@ -227,7 +267,7 @@ export default function InterviewPage() {
 
   // ── Main interview screen ────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative animate-fade-in">
       {/* Evaluating overlay */}
       {isEvaluating && (
         <div className="absolute inset-0 z-50 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center">
@@ -256,12 +296,10 @@ export default function InterviewPage() {
         </div>
       )}
       {/* Top bar */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+      <div className="bg-gray-900/80 backdrop-blur-md border-b border-white/[0.06] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a.96.96 0 01-.65.244H7.28a.96.96 0 01-.65-.244l-.348-.347z" />
-            </svg>
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30">
+            <LogoMark className="w-4 h-4 text-white" />
           </div>
           <span className="font-semibold text-white">Interview AI</span>
         </div>
@@ -270,7 +308,7 @@ export default function InterviewPage() {
 
       <div className="flex flex-1 gap-0 overflow-hidden">
         {/* Webcam sidebar */}
-        <div className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col items-center justify-start p-4 gap-3">
+        <div className="w-72 bg-gray-900/70 backdrop-blur-sm border-r border-white/[0.06] flex flex-col items-center justify-start p-4 gap-3">
           <div className="w-full aspect-video bg-gray-800 rounded-xl overflow-hidden relative">
             {webcamError ? (
               <div className="absolute inset-0 flex items-center justify-center text-center p-3">
@@ -307,16 +345,16 @@ export default function InterviewPage() {
               </div>
               <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%` }}
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%`, background: 'linear-gradient(to right, #6366f1, #a78bfa)' }}
                 />
               </div>
               <div className="flex justify-between mt-1.5">
                 {questions.map((_, i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 mx-0.5 rounded-full transition-colors duration-300 ${
-                      i < currentIndex ? 'bg-indigo-500' : i === currentIndex ? 'bg-indigo-400' : 'bg-gray-800'
+                    className={`h-1 flex-1 mx-0.5 rounded-full transition-all duration-300 ${
+                      i < currentIndex ? 'bg-indigo-500' : i === currentIndex ? 'bg-indigo-400/80' : 'bg-gray-800'
                     }`}
                   />
                 ))}
@@ -330,7 +368,7 @@ export default function InterviewPage() {
               </span>
 
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-colors duration-300 ${
-                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-gray-900 border-gray-800'
+                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-gray-900/60 border-gray-700/50 backdrop-blur-sm'
               }`}>
                 <svg
                   className={`w-3.5 h-3.5 shrink-0 ${timerExpired || isWarning ? 'text-red-400' : 'text-gray-500'} ${isWarning ? 'animate-pulse' : ''}`}
@@ -345,7 +383,7 @@ export default function InterviewPage() {
             </div>
 
             {/* Question text */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg shadow-black/20">
               <p className="text-lg font-medium text-white leading-relaxed">
                 {currentQuestion?.question_text}
               </p>
@@ -361,78 +399,128 @@ export default function InterviewPage() {
               </div>
             )}
 
-            {/* Answer controls */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-300">Your Answer</label>
-              <textarea
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                placeholder={speechSupported ? 'Click "Start Recording" to speak, or type your answer here...' : 'Type your answer here...'}
-                rows={7}
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors text-sm leading-relaxed"
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-600">
-                  {transcript.trim().split(/\s+/).filter(Boolean).length} words
-                </p>
-                {(() => {
-                  const { total, breakdown } = countFillers(transcript)
-                  if (total === 0) return null
-                  const top = rankFillers([{ total, breakdown }])[0]
-                  return (
-                    <p className="text-xs text-yellow-600/80">
-                      {total} filler word{total !== 1 ? 's' : ''} detected
-                      {top ? <span className="text-yellow-700/60"> · "{top.word}" ×{top.count}</span> : null}
-                    </p>
-                  )
-                })()}
-              </div>
-            </div>
+            {/* Feedback panel or answer controls */}
+            {feedback ? (
+              <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 flex flex-col gap-5 shadow-lg shadow-black/20">
+                {/* Score */}
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl font-bold text-white tabular-nums">{feedback.score}</span>
+                  <span className="text-xl text-gray-500 font-medium">/&thinsp;10</span>
+                </div>
 
-            <div className="flex items-center gap-3">
-              {speechSupported && (
-                <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
-                    isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-200'
-                  }`}
-                >
-                  {isRecording ? (
-                    <><div className="w-2 h-2 rounded-sm bg-white" />Stop Recording</>
-                  ) : (
-                    <><div className="w-2 h-2 rounded-full bg-red-500" />Start Recording</>
-                  )}
-                </button>
-              )}
+                {/* What they did well */}
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-green-400">What you did well</p>
+                  <p className="text-sm text-gray-200 leading-relaxed">{feedback.didWell}</p>
+                </div>
 
-              {transcript && (
-                <button onClick={() => setTranscript('')} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
-                  Clear
-                </button>
-              )}
+                {/* One thing to improve */}
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">One thing to improve</p>
+                  <p className="text-sm text-gray-200 leading-relaxed">{feedback.improve}</p>
+                </div>
 
-              <div className="flex-1" />
-
-              <button
-                onClick={saveAnswerAndAdvance}
-                disabled={isSaving || isEvaluating || !transcript.trim()}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm"
-              >
-                {isSaving ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                {/* Action buttons */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={handleTryAgain}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Saving...
-                  </>
-                ) : currentIndex < questions.length - 1 ? (
-                  <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
-                ) : (
-                  'Finish & Get Results'
-                )}
-              </button>
-            </div>
+                    Try Again
+                  </button>
+                  <div className="flex-1" />
+                  <button
+                    onClick={advanceQuestion}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-indigo-600/25"
+                  >
+                    {currentIndex < questions.length - 1 ? (
+                      <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
+                    ) : (
+                      'Finish & Get Results'
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Answer textarea */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-300">Your Answer</label>
+                  <textarea
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder={speechSupported ? 'Click "Start Recording" to speak, or type your answer here...' : 'Type your answer here...'}
+                    rows={7}
+                    className="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors text-sm leading-relaxed backdrop-blur-sm"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-600">
+                      {transcript.trim().split(/\s+/).filter(Boolean).length} words
+                    </p>
+                    {(() => {
+                      const { total, breakdown } = countFillers(transcript)
+                      if (total === 0) return null
+                      const top = rankFillers([{ total, breakdown }])[0]
+                      return (
+                        <p className="text-xs text-yellow-600/80">
+                          {total} filler word{total !== 1 ? 's' : ''} detected
+                          {top ? <span className="text-yellow-700/60"> · &quot;{top.word}&quot; ×{top.count}</span> : null}
+                        </p>
+                      )
+                    })()}
+                  </div>
+                </div>
+
+                {/* Recording + submit row */}
+                <div className="flex items-center gap-3">
+                  {speechSupported && (
+                    <button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                        isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-200'
+                      }`}
+                    >
+                      {isRecording ? (
+                        <><div className="w-2 h-2 rounded-sm bg-white" />Stop Recording</>
+                      ) : (
+                        <><div className="w-2 h-2 rounded-full bg-red-500" />Start Recording</>
+                      )}
+                    </button>
+                  )}
+
+                  {transcript && (
+                    <button onClick={() => setTranscript('')} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                      Clear
+                    </button>
+                  )}
+
+                  <div className="flex-1" />
+
+                  <button
+                    onClick={handleNextClick}
+                    disabled={isSaving || isEvaluating || !transcript.trim()}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-indigo-600/25 disabled:shadow-none"
+                  >
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : currentIndex < questions.length - 1 ? (
+                      <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
+                    ) : (
+                      'Finish & Get Results'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
 
             {error && (
               <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">

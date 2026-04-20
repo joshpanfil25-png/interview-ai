@@ -8,6 +8,15 @@ import type { HistoryEntry } from '@/lib/history'
 import type { ResumeGrade } from '@/app/api/grade-resume/route'
 import type { ResumeRewriteGuide } from '@/app/api/rewrite-resume/route'
 
+function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  )
+}
+
 const INTERVIEW_TYPES = [
   'General',
   'Finance',
@@ -220,39 +229,40 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 py-12 px-6">
+    <main className="min-h-screen py-12 px-6 animate-fade-in">
       <div className="w-full max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a.96.96 0 01-.65.244H7.28a.96.96 0 01-.65-.244l-.348-.347z" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 mb-5 shadow-lg shadow-indigo-600/30">
+            <LogoMark className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Interview AI</h1>
-          <p className="text-gray-500 mt-2 text-sm tracking-wide">Practice any interview, get brutal AI feedback, and actually improve.</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Interview AI</h1>
+          <p className="text-gray-500 mt-2.5 text-sm leading-relaxed">
+            Practice any interview.&nbsp; Get brutal feedback.&nbsp; Actually improve.
+          </p>
         </div>
 
-        {/* Form */}
+        {/* Form card */}
+        <div className="bg-gray-900/60 backdrop-blur-md border border-white/[0.07] rounded-3xl p-8 shadow-2xl shadow-black/40 mb-10">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Interview Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Interview Type</label>
-            <div className="flex flex-wrap gap-2">
-              {INTERVIEW_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setInterviewType(type)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    interviewType === type
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-300'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Interview Type</label>
+            <div className="relative">
+              <select
+                value={interviewType}
+                onChange={(e) => setInterviewType(e.target.value)}
+                className="w-full appearance-none bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer pr-10"
+              >
+                {INTERVIEW_TYPES.map((type) => (
+                  <option key={type} value={type} className="bg-gray-900">{type}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -268,7 +278,7 @@ export default function Home() {
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="e.g. Alex"
                 required
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
             <div>
@@ -281,7 +291,7 @@ export default function Home() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
                 required
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -295,7 +305,7 @@ export default function Home() {
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="e.g. Google"
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
             <div>
@@ -305,7 +315,7 @@ export default function Home() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Software Engineer"
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -325,7 +335,7 @@ export default function Home() {
               className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
                 isDragging
                   ? 'border-indigo-500 bg-indigo-500/10'
-                  : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                  : 'border-gray-700/50 bg-gray-900/50 hover:border-gray-600/60 hover:bg-gray-800/40'
               }`}
             >
               <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileInput} className="hidden" />
@@ -349,14 +359,14 @@ export default function Home() {
 
             {/* Resume tools — appear once a file is loaded */}
             {resumeText && (
-              <div className="border border-gray-800 rounded-xl overflow-hidden divide-y divide-gray-800">
+              <div className="border border-gray-700/50 rounded-2xl overflow-hidden divide-y divide-gray-700/50 shadow-lg shadow-black/20">
 
                 {/* ── Grade panel ─────────────────────────────── */}
                 <button
                   type="button"
                   onClick={() => resumeGrade ? setGradeOpen((o) => !o) : handleGradeResume()}
                   disabled={isGrading}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900 hover:bg-gray-800/80 transition-colors disabled:cursor-wait text-left"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900/80 hover:bg-gray-800/70 transition-colors disabled:cursor-wait text-left"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-6 h-6 rounded-md bg-indigo-500/20 flex items-center justify-center shrink-0">
@@ -414,7 +424,10 @@ export default function Home() {
                               <span className={`text-xs font-semibold tabular-nums ${text}`}>{val}/10</span>
                             </div>
                             <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full transition-all duration-500 ${bar}`} style={{ width: `${val * 10}%` }} />
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ width: `${val * 10}%`, background: val >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)' : val >= 6 ? 'linear-gradient(to right,#a16207,#facc15)' : 'linear-gradient(to right,#b91c1c,#f87171)' }}
+                              />
                             </div>
                           </div>
                         )
@@ -448,7 +461,7 @@ export default function Home() {
                       type="button"
                       onClick={() => rewriteGuide ? setRewriteOpen((o) => !o) : handleRewriteResume()}
                       disabled={isRewriting}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900 hover:bg-gray-800/80 transition-colors disabled:cursor-wait text-left"
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900/80 hover:bg-gray-800/70 transition-colors disabled:cursor-wait text-left"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="w-6 h-6 rounded-md bg-emerald-500/20 flex items-center justify-center shrink-0">
@@ -551,7 +564,7 @@ export default function Home() {
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
               placeholder="https://linkedin.com/in/yourprofile"
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
 
@@ -564,7 +577,7 @@ export default function Home() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-600/25"
           >
             {isLoading ? (
               <>
@@ -579,6 +592,7 @@ export default function Home() {
             )}
           </button>
         </form>
+        </div>
 
           {/* Past Interviews */}
           {history && history.length > 0 && (() => {
@@ -625,7 +639,7 @@ export default function Home() {
                 </div>
 
                 {/* Chart */}
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+                <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4 shadow-lg shadow-black/20">
                   <svg
                     viewBox={`0 0 ${VW} ${VH}`}
                     className="w-full"
@@ -699,7 +713,7 @@ export default function Home() {
                       <div
                         key={entry.sessionId}
                         onClick={() => router.push(`/results/${entry.sessionId}`)}
-                        className="bg-gray-900 border border-gray-800 rounded-2xl p-4 cursor-pointer hover:border-gray-700 transition-colors group"
+                        className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4 cursor-pointer hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200 group"
                       >
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
@@ -728,7 +742,6 @@ export default function Home() {
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                           {dims.map(({ label, val }) => {
-                            const barColor = val >= 8 ? 'bg-green-500' : val >= 6 ? 'bg-yellow-500' : 'bg-red-500'
                             return (
                               <div key={label}>
                                 <div className="flex justify-between text-xs mb-0.5">
@@ -736,7 +749,10 @@ export default function Home() {
                                   <span className="text-gray-500 tabular-nums">{val}</span>
                                 </div>
                                 <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${val * 10}%` }} />
+                                  <div
+                                    className="h-full rounded-full"
+                                    style={{ width: `${val * 10}%`, background: val >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)' : val >= 6 ? 'linear-gradient(to right,#a16207,#facc15)' : 'linear-gradient(to right,#b91c1c,#f87171)' }}
+                                  />
                                 </div>
                               </div>
                             )
@@ -750,6 +766,11 @@ export default function Home() {
             )
           })()}
       </div>
+
+      {/* Footer */}
+      <footer className="mt-12 pb-8 text-center">
+        <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+      </footer>
     </main>
   )
 }

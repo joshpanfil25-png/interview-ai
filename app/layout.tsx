@@ -6,7 +6,13 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Interview AI",
-  description: "AI-powered mock interview simulator for students",
+  description: "Practice any interview. Get brutal feedback. Actually improve.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -16,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-950 text-white min-h-screen`}>
+      <body className={`${inter.className} text-white min-h-screen`}>
         {children}
       </body>
     </html>

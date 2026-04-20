@@ -7,6 +7,15 @@ import { supabase } from '@/lib/supabase'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
 import { saveHistoryEntry } from '@/lib/history'
 
+function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  )
+}
+
 export default function ResultsPage() {
   const router = useRouter()
   const params = useParams()
@@ -156,11 +165,10 @@ export default function ResultsPage() {
     return 'text-red-400'
   }
 
-  const scoreBarColor = (score: number) => {
-    if (score >= 8) return 'bg-green-500'
-    if (score >= 6) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
+  const scoreBarGradient = (score: number) =>
+    score >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)'
+    : score >= 6 ? 'linear-gradient(to right,#a16207,#facc15)'
+    : 'linear-gradient(to right,#b91c1c,#f87171)'
 
   const overallGrade = (score: number) => {
     if (score >= 9) return { grade: 'A+', label: 'Outstanding' }
@@ -501,7 +509,7 @@ export default function ResultsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white font-medium mb-1">Evaluating your interview...</p>
@@ -513,12 +521,12 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-md shadow-indigo-600/25"
           >
             Start Over
           </button>
@@ -532,13 +540,11 @@ export default function ResultsPage() {
   const { grade, label } = overallGrade(result.overallScore)
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen animate-fade-in">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a.96.96 0 01-.65.244H7.28a.96.96 0 01-.65-.244l-.348-.347z" />
-          </svg>
+      <div className="bg-gray-900/80 backdrop-blur-md border-b border-white/[0.06] px-6 py-3 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30">
+          <LogoMark className="w-4 h-4 text-white" />
         </div>
         <span className="font-semibold text-white">Interview AI</span>
       </div>
@@ -556,7 +562,7 @@ export default function ResultsPage() {
 
         {/* Blind Spot Callout */}
         {result.blindSpot?.name && (
-          <div className="relative overflow-hidden rounded-2xl border border-red-500/20 bg-gray-900">
+          <div className="relative overflow-hidden rounded-2xl border border-red-500/25 bg-gray-900/60 backdrop-blur-sm shadow-lg shadow-black/20">
             {/* Subtle red gradient wash */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-500/8 via-transparent to-transparent pointer-events-none" />
             <div className="relative px-6 py-5 flex flex-col gap-2">
@@ -571,15 +577,36 @@ export default function ResultsPage() {
         )}
 
         {/* Overall Score */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
-          <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-3">Overall Score</p>
-          <div className="flex items-end justify-center gap-3 mb-2">
-            <span className={`text-7xl font-bold tabular-nums ${scoreColor(result.overallScore)}`}>
-              {result.overallScore}
-            </span>
-            <span className="text-3xl text-gray-600 mb-2">/10</span>
+        <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 text-center shadow-xl shadow-black/30">
+          <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-6">Overall Score</p>
+          <div className="flex items-center justify-center mb-5">
+            {(() => {
+              const r = 72
+              const circ = 2 * Math.PI * r
+              const pct = result.overallScore / 10
+              const dash = `${(pct * circ).toFixed(1)} ${((1 - pct) * circ).toFixed(1)}`
+              const hexColor = result.overallScore >= 8 ? '#4ade80' : result.overallScore >= 6 ? '#facc15' : '#f87171'
+              return (
+                <div className="relative inline-flex items-center justify-center w-48 h-48">
+                  <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r={r} fill="none" stroke="#1f2937" strokeWidth="9" />
+                    <circle
+                      cx="80" cy="80" r={r}
+                      fill="none" stroke={hexColor} strokeWidth="9"
+                      strokeLinecap="round" strokeDasharray={dash}
+                    />
+                  </svg>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className={`text-6xl font-bold tabular-nums ${scoreColor(result.overallScore)}`}>
+                      {result.overallScore}
+                    </span>
+                    <span className="text-gray-600 text-sm">/10</span>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
-          <div className="inline-flex items-center gap-2 bg-gray-800 rounded-full px-4 py-1.5">
+          <div className="inline-flex items-center gap-2 bg-gray-800/80 rounded-full px-4 py-1.5">
             <span className="text-white font-bold">{grade}</span>
             <span className="text-gray-400 text-sm">— {label}</span>
           </div>
@@ -654,7 +681,7 @@ export default function ResultsPage() {
           <h2 className="text-white font-semibold text-lg mb-4">Question Breakdown</h2>
           <div className="space-y-4">
             {result.evaluations.map((ev, i) => (
-              <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              <div key={i} className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-5 shadow-lg shadow-black/20">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <p className="text-gray-200 font-medium text-sm leading-relaxed flex-1">
                     <span className="text-indigo-400 font-semibold">Q{i + 1}.</span> {ev.question}
@@ -674,8 +701,8 @@ export default function ResultsPage() {
                       </div>
                       <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${scoreBarColor(val)}`}
-                          style={{ width: `${val * 10}%` }}
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${val * 10}%`, background: scoreBarGradient(val) }}
                         />
                       </div>
                     </div>
@@ -735,9 +762,9 @@ export default function ResultsPage() {
 
         {/* Filler Words */}
         {fillerData && (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden shadow-lg shadow-black/20">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between gap-4">
+            <div className="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0">
                   {/* mic icon */}
@@ -851,7 +878,7 @@ export default function ResultsPage() {
         {/* Feedback Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Biggest Mistakes */}
-          <div className="bg-gray-900 border border-red-900/30 rounded-2xl p-5">
+          <div className="bg-gray-900/60 backdrop-blur-sm border border-red-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg bg-red-500/20 flex items-center justify-center">
                 <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -871,7 +898,7 @@ export default function ResultsPage() {
           </div>
 
           {/* Improvements */}
-          <div className="bg-gray-900 border border-green-900/30 rounded-2xl p-5">
+          <div className="bg-gray-900/60 backdrop-blur-sm border border-green-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg bg-green-500/20 flex items-center justify-center">
                 <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -892,7 +919,7 @@ export default function ResultsPage() {
         </div>
 
         {/* Example Better Answer */}
-        <div className="bg-gray-900 border border-indigo-900/30 rounded-2xl p-5">
+        <div className="bg-gray-900/60 backdrop-blur-sm border border-indigo-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
               <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -912,7 +939,7 @@ export default function ResultsPage() {
           <button
             onClick={generateShareCard}
             disabled={isGenerating || !sessionData}
-            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 font-semibold px-6 py-3 rounded-xl transition-colors border border-gray-700"
+            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
           >
             {isGenerating ? (
               <>
@@ -933,7 +960,7 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push(`/interview/${sessionId}`)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-md shadow-indigo-600/25"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -942,14 +969,14 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
           >
             New Interview
           </button>
 
           <button
             onClick={() => { setEmailOpen((o) => !o); setEmailStatus('idle'); setEmailError('') }}
-            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-colors border border-gray-700"
+            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -983,7 +1010,7 @@ export default function ResultsPage() {
                   <button
                     onClick={sendEmail}
                     disabled={emailStatus === 'sending' || !emailAddress.trim()}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm"
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm shadow-sm shadow-indigo-600/20 disabled:shadow-none"
                   >
                     {emailStatus === 'sending' ? (
                       <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -1014,6 +1041,11 @@ export default function ResultsPage() {
             Loading…
           </iframe>
         </div>
+
+        {/* Footer */}
+        <footer className="pb-10 pt-4 text-center">
+          <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+        </footer>
       </div>
     </div>
   )

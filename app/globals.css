@@ -6,6 +6,18 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(160deg, #0d0d22 0%, #07071a 45%, #050510 100%);
+  min-height: 100vh;
+}
+
+/* Fade-in page animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.45s ease-out both;
 }
 
 /* Smooth scrollbar */

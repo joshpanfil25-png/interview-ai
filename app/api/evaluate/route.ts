@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
     }
 
+    // Create the Supabase client at request time (never at module/build time).
+    const supabase = getSupabaseClient()
+
     // Fetch questions
     const { data: questions, error: qError } = await supabase
       .from('questions')
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    const prompt = `You are an expert interview coach. Evaluate the following mock interview answers.
+    const prompt = `You are a supportive, experienced interview coach — the kind of mentor who genuinely believes in the candidate and wants to see them succeed. Evaluate the following mock interview answers with warmth and encouragement. Your feedback should build the candidate up while staying honest and specific: always lead with what they did well, and frame every area for growth as an opportunity to improve rather than a failure. Keep the honesty, soften the delivery.
 
 ${qaPairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).join('\n\n')}
 
@@ -88,11 +91,13 @@ For each answer, do two things:
    - "present" — clearly and specifically addressed
    - "weak" — hinted at or vague but not fully developed
    - "missing" — entirely absent
-   Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of coaching on how to improve the STAR structure for that specific answer.
+   Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of warm, constructive coaching on how to strengthen the STAR structure for that specific answer.
 
-Also identify the candidate's single most important blind spot — the one pattern across their answers that they almost certainly didn't notice themselves. This should feel uncomfortably specific, like it was written just for them. It must be grounded in something actually present in their answers (a real pattern, not a generic observation).
+Also identify the candidate's single most valuable blind spot — the one pattern across their answers that they probably haven't noticed themselves, and that would help them most to become aware of. This should feel like a genuinely useful insight from a coach who was paying close attention: specific and personal, like it was written just for them. It must be grounded in something actually present in their answers (a real pattern, not a generic observation).
 
-Give it a short punchy name (2–5 words, like a chapter title) and one direct sentence that names the specific habit without softening it. Pull from concrete details in their answers.
+Give it a short, memorable name (2–5 words, like a chapter title) and one honest, warm sentence that names the specific habit and points toward the upside of addressing it. Pull from concrete details in their answers, and frame it as a helpful realization that will make them stronger — an insight, not an attack.
+
+For biggestMistakes, list the three growth opportunities that would raise their performance the most. For improvements, give three specific, actionable next steps they can apply right away. Keep both honest and concrete, but phrase them the way an encouraging coach would — as constructive moves forward, not a list of things they got wrong. For exampleBetterAnswer, show a stronger version of one of their weakest answers as inspiration for what they're capable of.
 
 Return ONLY a valid JSON object with no extra text:
 {
@@ -105,13 +110,13 @@ Return ONLY a valid JSON object with no extra text:
         "action": "present|weak|missing",
         "result": "present|weak|missing",
         "starScore": 0,
-        "starCoaching": "One sentence of specific coaching here."
+        "starCoaching": "One sentence of warm, specific coaching here."
       }
     }
   ],
   "blindSpot": {
-    "name": "Short Punchy Name",
-    "description": "One direct sentence grounded in their actual answers."
+    "name": "Short Memorable Name",
+    "description": "One honest, encouraging sentence grounded in their actual answers, framed as a helpful insight."
   },
   "biggestMistakes": ["mistake1", "mistake2", "mistake3"],
   "improvements": ["improvement1", "improvement2", "improvement3"],

@@ -16,16 +16,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing question or answer' }, { status: 400 })
     }
 
-    const prompt = `You are an expert interview coach giving instant feedback on a single interview answer.
+    const prompt = `You are a supportive, encouraging interview coach giving instant feedback on a single interview answer. Picture a mentor who is genuinely in the candidate's corner — you want to build their confidence while helping them grow, never to tear them down.
 
 Question: ${question}
 Answer: ${answer}
 
-Rate this answer and give concise feedback. Return ONLY a valid JSON object with no extra text:
+Lead with sincere recognition of what worked, then frame the next step as an opportunity to get even stronger. Stay honest and specific — don't paper over real gaps — but keep the delivery warm and motivating. Return ONLY a valid JSON object with no extra text:
 {
   "score": <integer 1-10>,
-  "didWell": "<one sentence — the single most effective thing they did>",
-  "improve": "<one sentence — the single most important thing to fix next time>"
+  "didWell": "<one encouraging, specific sentence — the single most effective thing they did>",
+  "improve": "<one constructive sentence — the single biggest opportunity to make this answer stronger next time, framed as a growth move rather than a failure>"
 }`
 
     const response = await client.messages.create({

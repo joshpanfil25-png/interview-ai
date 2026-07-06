@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
     if (!company || !role || !sessionId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+
+    // Create the Supabase client at request time (never at module/build time).
+    const supabase = getSupabaseClient()
 
     const verticalGuidance: Record<string, string> = {
       'Finance': 'Focus on financial modeling, valuation methods (DCF, comps, precedent transactions), market awareness, and quantitative reasoning. The role-specific question should test technical finance knowledge.',
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const guidance = verticalGuidance[interviewType] ?? verticalGuidance['General']
 
-    const prompt = `You are an expert interviewer preparing questions for a candidate applying to ${company} for the role of ${role}.
+    const prompt = `You are a warm, encouraging interview coach preparing practice questions for a candidate applying to ${company} for the role of ${role}. Your goal is to help this person grow and show their best self, so write questions that are appropriately challenging but always fair — open-ended prompts that give the candidate room to shine, never "gotcha" questions designed to trip them up. Even the curveball should feel like a thoughtful, energizing question, not an ambush.
 
 Interview vertical: ${interviewType}
 Vertical guidance: ${guidance}

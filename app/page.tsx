@@ -10,9 +10,9 @@ import type { ResumeRewriteGuide } from '@/app/api/rewrite-resume/route'
 
 function LogoMark({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
+      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
     </svg>
   )
 }
@@ -229,33 +229,97 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen py-12 px-6 animate-fade-in">
-      <div className="w-full max-w-xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 mb-5 shadow-lg shadow-indigo-600/30">
-            <LogoMark className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Interview AI</h1>
-          <p className="text-gray-500 mt-2.5 text-sm leading-relaxed">
-            Practice any interview.&nbsp; Get brutal feedback.&nbsp; Actually improve.
-          </p>
-        </div>
+    <main className="relative min-h-screen animate-fade-in overflow-x-hidden">
+      {/* Ambient glows */}
+      <div
+        className="pointer-events-none fixed -top-40 -right-40 w-[600px] h-[600px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,90,31,0.14), transparent 70%)' }}
+      />
+      <div
+        className="pointer-events-none fixed -bottom-52 -left-52 w-[620px] h-[620px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(217,255,63,0.08), transparent 70%)' }}
+      />
 
-        {/* Form card */}
-        <div className="bg-gray-900/60 backdrop-blur-md border border-white/[0.07] rounded-3xl p-8 shadow-2xl shadow-black/40 mb-10">
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="relative z-[2] max-w-[1200px] mx-auto px-6 md:px-12">
+        {/* Nav */}
+        <nav className="flex items-center justify-between py-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-brand shadow-[0_0_24px_rgba(255,90,31,0.45)]">
+              <LogoMark className="w-5 h-5 text-blacktop" />
+            </div>
+            <span className="font-display text-[22px] font-black text-cream">runback</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="#how-it-works" className="hidden sm:inline text-sm text-ink-muted hover:text-cream transition-colors">How it works</a>
+            <button type="button" className="border border-line-hover rounded-lg px-4 py-2 text-sm text-cream hover:border-brand transition-colors">Log in</button>
+          </div>
+        </nav>
+
+        {/* Hero + session */}
+        <section className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 items-start pt-6 lg:pt-10">
+          {/* LEFT — thesis */}
+          <div className="flex flex-col gap-6">
+            <div className="inline-flex items-center gap-2 self-start bg-white/[0.06] border border-line rounded-full px-3.5 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-volt" />
+              <span className="text-xs text-ink-muted">93% of grads walk in anxious. Not you.</span>
+            </div>
+
+            <h1 className="font-display text-[52px] sm:text-[72px] font-black leading-[0.9] tracking-tight text-cream">
+              DO THE<br />
+              <span className="text-brand">REPS</span><br />
+              BEFORE<br />
+              IT&apos;S REAL.
+            </h1>
+
+            <p className="text-[18px] text-ink-muted max-w-[450px]">
+              Unlimited AI mock interviews built from your resume. Get grilled, get scored, run it back until the real one feels like a scrimmage.
+            </p>
+
+            {/* Scoreboard */}
+            <div className="flex border border-line rounded-2xl overflow-hidden w-full">
+              <div className="flex-1 border-r border-line px-5 py-4">
+                <p className="font-display font-black text-3xl text-volt">17</p>
+                <p className="text-xs text-ink-muted mt-1">interview types</p>
+              </div>
+              <div className="flex-1 border-r border-line px-5 py-4">
+                <p className="font-display font-black text-3xl text-cream">∞</p>
+                <p className="text-xs text-ink-muted mt-1">reps, free to start</p>
+              </div>
+              <div className="flex-1 px-5 py-4">
+                <p className="font-display font-black text-3xl text-brand">60s</p>
+                <p className="text-xs text-ink-muted mt-1">to your first question</p>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — session panel (existing form, untouched) */}
+          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
+            <div
+              className="relative bg-surface border border-line rounded-2xl p-5 overflow-hidden"
+              style={{ boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}
+            >
+              {/* Top accent bar */}
+              <div
+                className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+                style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }}
+              />
+              {/* Panel header */}
+              <div className="flex items-center justify-between mb-5 pt-1">
+                <span className="text-[13px] font-bold text-ink-muted/70 tracking-wide uppercase">New session</span>
+                <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-semibold">● LIVE</span>
+              </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Interview Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Interview Type</label>
+            <label className="block text-[13px] font-semibold text-ink-muted tracking-tight mb-1.5">Interview Type</label>
             <div className="relative">
               <select
                 value={interviewType}
                 onChange={(e) => setInterviewType(e.target.value)}
-                className="w-full appearance-none bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer pr-10"
+                className="w-full appearance-none bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors cursor-pointer pr-10"
               >
                 {INTERVIEW_TYPES.map((type) => (
-                  <option key={type} value={type} className="bg-gray-900">{type}</option>
+                  <option key={type} value={type} className="bg-surface">{type}</option>
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
@@ -269,7 +333,7 @@ export default function Home() {
           {/* First Name + Email */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">
                 First Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -278,11 +342,11 @@ export default function Home() {
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="e.g. Alex"
                 required
-                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -291,7 +355,7 @@ export default function Home() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
                 required
-                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
           </div>
@@ -299,30 +363,30 @@ export default function Home() {
           {/* Company + Role */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Company <span className="text-red-500">*</span></label>
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">Company <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="e.g. Google"
-                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Role <span className="text-red-500">*</span></label>
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">Role <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Software Engineer"
-                className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
           </div>
 
           {/* Resume Upload */}
           <div className="flex flex-col gap-2">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-[13px] font-semibold text-ink-muted tracking-tight">
               Resume <span className="text-gray-500 font-normal">(optional)</span>
             </label>
 
@@ -332,15 +396,15 @@ export default function Home() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+              className={`relative border border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                 isDragging
-                  ? 'border-indigo-500 bg-indigo-500/10'
-                  : 'border-gray-700/50 bg-gray-900/50 hover:border-gray-600/60 hover:bg-gray-800/40'
+                  ? 'border-brand/70 bg-brand/[0.06]'
+                  : 'border-white/[0.12] bg-surface-inset hover:border-white/20'
               }`}
             >
               <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileInput} className="hidden" />
               {fileName ? (
-                <div className="flex items-center justify-center gap-2 text-indigo-400">
+                <div className="flex items-center justify-center gap-2 text-brand">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -359,24 +423,24 @@ export default function Home() {
 
             {/* Resume tools — appear once a file is loaded */}
             {resumeText && (
-              <div className="border border-gray-700/50 rounded-2xl overflow-hidden divide-y divide-gray-700/50 shadow-lg shadow-black/20">
+              <div className="border border-white/[0.08] rounded-lg overflow-hidden divide-y divide-white/[0.06]">
 
                 {/* ── Grade panel ─────────────────────────────── */}
                 <button
                   type="button"
                   onClick={() => resumeGrade ? setGradeOpen((o) => !o) : handleGradeResume()}
                   disabled={isGrading}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900/80 hover:bg-gray-800/70 transition-colors disabled:cursor-wait text-left"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-surface hover:bg-white/[0.04] transition-colors disabled:cursor-wait text-left"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-md bg-indigo-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-md bg-brand/20 flex items-center justify-center shrink-0">
                       {isGrading ? (
-                        <svg className="animate-spin w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin w-3.5 h-3.5 text-brand" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                       ) : (
-                        <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       )}
@@ -407,7 +471,7 @@ export default function Home() {
 
                 {/* Grade expanded body */}
                 {resumeGrade && gradeOpen && (
-                  <div className="bg-gray-950 px-4 py-4 flex flex-col gap-4">
+                  <div className="bg-surface-inset px-4 py-4 flex flex-col gap-4">
                     <div className="flex flex-col gap-2.5">
                       {([
                         { label: 'Clarity & Formatting', val: resumeGrade.scores.clarity },
@@ -423,10 +487,10 @@ export default function Home() {
                               <span className="text-xs text-gray-400">{label}</span>
                               <span className={`text-xs font-semibold tabular-nums ${text}`}>{val}/10</span>
                             </div>
-                            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                               <div
                                 className="h-full rounded-full transition-all duration-500"
-                                style={{ width: `${val * 10}%`, background: val >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)' : val >= 6 ? 'linear-gradient(to right,#a16207,#facc15)' : 'linear-gradient(to right,#b91c1c,#f87171)' }}
+                                style={{ width: `${val * 10}%`, background: val >= 8 ? '#22c55e' : val >= 6 ? '#eab308' : '#ef4444' }}
                               />
                             </div>
                           </div>
@@ -434,12 +498,12 @@ export default function Home() {
                       })}
                     </div>
 
-                    <div className="border-t border-gray-800/60 pt-3">
+                    <div className="border-t border-white/[0.08] pt-3">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">3 Quick Wins</p>
                       <div className="flex flex-col gap-2">
                         {resumeGrade.quickWins.filter(Boolean).map((win, i) => (
                           <div key={i} className="flex gap-2.5">
-                            <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                            <span className="shrink-0 w-5 h-5 rounded-full bg-brand/20 text-brand text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
                             <p className="text-sm text-gray-300 leading-relaxed">{win}</p>
                           </div>
                         ))}
@@ -449,7 +513,7 @@ export default function Home() {
                   </div>
                 )}
                 {gradeError && !resumeGrade && (
-                  <div className="bg-gray-950 px-4 py-3">
+                  <div className="bg-surface-inset px-4 py-3">
                     <p className="text-xs text-red-400">{gradeError}</p>
                   </div>
                 )}
@@ -461,7 +525,7 @@ export default function Home() {
                       type="button"
                       onClick={() => rewriteGuide ? setRewriteOpen((o) => !o) : handleRewriteResume()}
                       disabled={isRewriting}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-900/80 hover:bg-gray-800/70 transition-colors disabled:cursor-wait text-left"
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-surface hover:bg-white/[0.04] transition-colors disabled:cursor-wait text-left"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="w-6 h-6 rounded-md bg-emerald-500/20 flex items-center justify-center shrink-0">
@@ -495,7 +559,7 @@ export default function Home() {
 
                     {/* Rewrite guide body */}
                     {rewriteGuide && rewriteOpen && (
-                      <div className="bg-gray-950 px-4 py-4 flex flex-col gap-1">
+                      <div className="bg-surface-inset px-4 py-4 flex flex-col gap-1">
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Resume Rewrite Guide</p>
                           <p className="text-xs text-gray-600">{rewriteGuide.rewrites.length} changes</p>
@@ -512,16 +576,16 @@ export default function Home() {
                             }
                             const pill = reasonColors[item.reason] ?? 'bg-gray-700 text-gray-400 border-gray-600'
                             return (
-                              <div key={i} className="rounded-xl border border-gray-800 overflow-hidden">
+                              <div key={i} className="rounded-lg border border-white/[0.08] overflow-hidden">
                                 {/* Reason tag */}
-                                <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 border-b border-gray-800">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-surface-inset border-b border-white/[0.08]">
                                   <span className="text-xs text-gray-600 tabular-nums">#{i + 1}</span>
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${pill}`}>
                                     {item.reason}
                                   </span>
                                 </div>
                                 {/* Before / After */}
-                                <div className="grid grid-cols-1 divide-y divide-gray-800">
+                                <div className="grid grid-cols-1 divide-y divide-white/[0.06]">
                                   <div className="px-3 py-2.5 bg-red-500/5">
                                     <p className="text-xs font-semibold text-red-500/70 uppercase tracking-wider mb-1">Before</p>
                                     <p className="text-sm text-gray-400 leading-relaxed line-through decoration-red-500/40">{item.original}</p>
@@ -543,7 +607,7 @@ export default function Home() {
                       </div>
                     )}
                     {rewriteError && !rewriteGuide && (
-                      <div className="bg-gray-950 px-4 py-3">
+                      <div className="bg-surface-inset px-4 py-3">
                         <p className="text-xs text-red-400">{rewriteError}</p>
                       </div>
                     )}
@@ -556,7 +620,7 @@ export default function Home() {
 
           {/* LinkedIn */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-[13px] font-semibold text-ink-muted tracking-tight mb-1.5">
               LinkedIn URL <span className="text-gray-500 font-normal">(optional)</span>
             </label>
             <input
@@ -564,12 +628,12 @@ export default function Home() {
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
               placeholder="https://linkedin.com/in/yourprofile"
-              className="w-full bg-gray-900/70 border border-gray-700/60 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
             />
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
+            <p className="text-red-400 text-sm bg-red-500/[0.08] border border-red-500/20 rounded-md px-3 py-2.5">
               {error}
             </p>
           )}
@@ -577,7 +641,7 @@ export default function Home() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-600/25"
+            className="w-full bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-blacktop font-semibold text-sm py-3 rounded-md ring-1 ring-inset ring-black/10 shadow-[0_4px_16px_rgba(255,90,31,0.4)] hover:shadow-[0_6px_20px_rgba(255,90,31,0.5)] transition-all flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -588,7 +652,7 @@ export default function Home() {
                 Generating Interview...
               </>
             ) : (
-              'Generate Interview'
+              'Run it back ◀◀'
             )}
           </button>
         </form>
@@ -639,20 +703,13 @@ export default function Home() {
                 </div>
 
                 {/* Chart */}
-                <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4 shadow-lg shadow-black/20">
+                <div className="bg-surface border border-white/[0.08] rounded-xl p-4">
                   <svg
                     viewBox={`0 0 ${VW} ${VH}`}
                     className="w-full"
                     style={{ height: 160 }}
                     aria-label="Score progression chart"
                   >
-                    <defs>
-                      <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-
                     {/* Grid lines + y-axis labels */}
                     {gridScores.map(s => {
                       const y = PT + (1 - s / 100) * plotH
@@ -665,11 +722,11 @@ export default function Home() {
                     })}
 
                     {/* Area fill (multi-point only) */}
-                    {n > 1 && <path d={areaPath} fill="url(#scoreGrad)" />}
+                    {n > 1 && <path d={areaPath} fill="#FF5A1F" fillOpacity="0.07" />}
 
                     {/* Line (multi-point only) */}
                     {n > 1 && (
-                      <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d={linePath} fill="none" stroke="#FF5A1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     )}
 
                     {/* Points, score labels, x-axis date labels */}
@@ -686,7 +743,7 @@ export default function Home() {
                             {p.score}
                           </text>
                           {/* Point circle */}
-                          <circle cx={p.x} cy={p.y} r="4" fill="#111827" stroke="#6366f1" strokeWidth="2" />
+                          <circle cx={p.x} cy={p.y} r="4" fill="#111827" stroke="#FF5A1F" strokeWidth="2" />
                           <circle cx={p.x} cy={p.y} r="2" fill={scoreColor} />
                           {/* X-axis date label */}
                           <text x={p.x} y={VH - 4} textAnchor={labelAnchor} fontSize="9" fill="#6b7280">
@@ -713,7 +770,7 @@ export default function Home() {
                       <div
                         key={entry.sessionId}
                         onClick={() => router.push(`/results/${entry.sessionId}`)}
-                        className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4 cursor-pointer hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200 group"
+                        className="bg-surface border border-white/[0.08] rounded-xl p-4 cursor-pointer hover:border-white/20 transition-colors group"
                       >
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
@@ -723,7 +780,7 @@ export default function Home() {
                               <p className="text-sm text-gray-400 truncate">{entry.role}</p>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand/15 text-brand border border-brand/20">
                                 {entry.interviewType}
                               </span>
                               <span className="text-xs text-gray-600">{dateStr}</span>
@@ -748,10 +805,10 @@ export default function Home() {
                                   <span className="text-gray-600">{label}</span>
                                   <span className="text-gray-500 tabular-nums">{val}</span>
                                 </div>
-                                <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                                <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
                                   <div
                                     className="h-full rounded-full"
-                                    style={{ width: `${val * 10}%`, background: val >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)' : val >= 6 ? 'linear-gradient(to right,#a16207,#facc15)' : 'linear-gradient(to right,#b91c1c,#f87171)' }}
+                                    style={{ width: `${val * 10}%`, background: val >= 8 ? '#22c55e' : val >= 6 ? '#eab308' : '#ef4444' }}
                                   />
                                 </div>
                               </div>
@@ -765,12 +822,14 @@ export default function Home() {
               </div>
             )
           })()}
-      </div>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <footer className="mt-12 pb-8 text-center">
-        <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-14 pb-10 text-center">
+          <p className="text-xs text-ink-muted/60">© 2026 Runback&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+        </footer>
+      </div>
     </main>
   )
 }

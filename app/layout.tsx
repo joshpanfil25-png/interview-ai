@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Archivo } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const archivo = Archivo({ subsets: ["latin"], weight: ["800", "900"], variable: "--font-archivo" });
 
 export const metadata: Metadata = {
-  title: "Interview AI",
-  description: "Practice any interview. Get brutal feedback. Actually improve.",
+  title: "Runback — Run it back till it's easy",
+  description: "Unlimited AI mock interviews built from your resume. Do the reps before the real one.",
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -22,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} text-white min-h-screen`}>
+      <body className={`${inter.variable} ${archivo.variable} text-ink min-h-screen`}>
         {children}
       </body>
     </html>

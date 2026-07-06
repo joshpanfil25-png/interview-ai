@@ -9,9 +9,9 @@ import { saveHistoryEntry } from '@/lib/history'
 
 function LogoMark({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
+      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
     </svg>
   )
 }
@@ -165,10 +165,11 @@ export default function ResultsPage() {
     return 'text-red-400'
   }
 
+  // Flat solid fills — no gradients
   const scoreBarGradient = (score: number) =>
-    score >= 8 ? 'linear-gradient(to right,#15803d,#4ade80)'
-    : score >= 6 ? 'linear-gradient(to right,#a16207,#facc15)'
-    : 'linear-gradient(to right,#b91c1c,#f87171)'
+    score >= 8 ? '#22c55e'
+    : score >= 6 ? '#eab308'
+    : '#ef4444'
 
   const overallGrade = (score: number) => {
     if (score >= 9) return { grade: 'A+', label: 'Outstanding' }
@@ -304,15 +305,12 @@ export default function ResultsPage() {
         return lines
       }
 
-      // ── Background gradient ────────────────────────────
-      const bg = ctx.createLinearGradient(0, 0, W, H)
-      bg.addColorStop(0, '#0e0e1c')
-      bg.addColorStop(1, '#05050d')
-      ctx.fillStyle = bg
+      // ── Flat background (no gradient) ──────────────────
+      ctx.fillStyle = '#14110d'
       ctx.fillRect(0, 0, W, H)
 
-      // ── Indigo top accent bar ──────────────────────────
-      ctx.fillStyle = '#6366f1'
+      // ── Brand top accent bar ───────────────────────────
+      ctx.fillStyle = '#FF5A1F'
       ctx.fillRect(0, 0, W, 4)
 
       // ── Score colour ───────────────────────────────────
@@ -320,14 +318,6 @@ export default function ResultsPage() {
       const scoreStr = score.toString()
       const scoreHex = score >= 8 ? '#4ade80' : score >= 6 ? '#facc15' : '#f87171'
       const { grade, label } = overallGrade(score)
-
-      // ── Radial glow behind score ───────────────────────
-      const glow = ctx.createRadialGradient(290, 290, 0, 290, 290, 230)
-      glow.addColorStop(0, scoreHex + '28')
-      glow.addColorStop(0.6, scoreHex + '08')
-      glow.addColorStop(1, 'transparent')
-      ctx.fillStyle = glow
-      ctx.fillRect(0, 0, W, H)
 
       // ── LEFT PANEL (center x = 290) ────────────────────
       const LCX = 290
@@ -406,7 +396,7 @@ export default function ResultsPage() {
       ctx.font = '400 13px system-ui, -apple-system, sans-serif'
       ctx.fillText('at', RPX, afterRole + 16)
 
-      // Company (indigo, single line truncated)
+      // Company (brand, single line truncated)
       const CO_FONT = 'bold 26px system-ui, -apple-system, sans-serif'
       ctx.font = CO_FONT
       let company = sessionData.company
@@ -414,7 +404,7 @@ export default function ResultsPage() {
         company = company.slice(0, -1)
       }
       if (company !== sessionData.company) company += '…'
-      ctx.fillStyle = '#818cf8'
+      ctx.fillStyle = '#FF7A45'
       ctx.fillText(company, RPX, afterRole + 50)
 
       // Section divider
@@ -475,17 +465,28 @@ export default function ResultsPage() {
       ctx.lineTo(W, 560)
       ctx.stroke()
 
-      // App icon box
-      ctx.fillStyle = '#6366f1'
+      // App icon box — brand orange with double-chevron rewind mark
+      ctx.fillStyle = '#FF5A1F'
       ctx.beginPath()
       ctx.roundRect(40, 577, 30, 30, 7)
       ctx.fill()
-      ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText('AI', 55, 597)
+      ctx.fillStyle = '#121212'
+      // right chevron
+      ctx.beginPath()
+      ctx.moveTo(59, 586)
+      ctx.lineTo(59, 598)
+      ctx.lineTo(52, 592)
+      ctx.closePath()
+      ctx.fill()
+      // left chevron
+      ctx.beginPath()
+      ctx.moveTo(52, 586)
+      ctx.lineTo(52, 598)
+      ctx.lineTo(45, 592)
+      ctx.closePath()
+      ctx.fill()
 
-      // "Practiced with Interview AI"
+      // "Practiced with Runback"
       ctx.textAlign = 'left'
       ctx.font = '400 14px system-ui, -apple-system, sans-serif'
       ctx.fillStyle = '#6b7280'
@@ -493,13 +494,13 @@ export default function ResultsPage() {
       ctx.font = '400 14px system-ui, -apple-system, sans-serif'
       const prefixW = ctx.measureText('Practiced with ').width
       ctx.font = '600 14px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = '#a5b4fc'
-      ctx.fillText('Interview AI', 82 + prefixW, 597)
+      ctx.fillStyle = '#FF7A45'
+      ctx.fillText('Runback', 82 + prefixW, 597)
 
       // ── Download ───────────────────────────────────────
       const slug = sessionData.company.toLowerCase().replace(/\s+/g, '-')
       const a = document.createElement('a')
-      a.download = `interview-ai-${slug}.png`
+      a.download = `runback-${slug}.png`
       a.href = canvas.toDataURL('image/png')
       a.click()
     } finally {
@@ -511,9 +512,9 @@ export default function ResultsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white font-medium mb-1">Evaluating your interview...</p>
-          <p className="text-gray-500 text-sm">Claude is reviewing your answers</p>
+          <p className="text-ink-muted text-sm">Claude is reviewing your answers</p>
         </div>
       </div>
     )
@@ -526,7 +527,7 @@ export default function ResultsPage() {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-md shadow-indigo-600/25"
+            className="bg-brand-hover hover:bg-brand text-white text-sm px-5 py-2 rounded-md font-medium transition-colors"
           >
             Start Over
           </button>
@@ -542,17 +543,20 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen animate-fade-in">
       {/* Header */}
-      <div className="bg-gray-900/80 backdrop-blur-md border-b border-white/[0.06] px-6 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30">
-          <LogoMark className="w-4 h-4 text-white" />
+      <div className="bg-surface-inset border-b border-line px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
+            <LogoMark className="w-4 h-4 text-blacktop" />
+          </div>
+          <span className="font-display font-semibold text-cream text-sm">runback</span>
         </div>
-        <span className="font-semibold text-white">Interview AI</span>
+        <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide">● RESULTS</span>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         {/* Auto-email status banner */}
         {autoEmailStatus === 'sent' && (
-          <div className="flex items-center gap-2.5 bg-green-500/8 border border-green-500/20 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2.5 bg-green-500/[0.06] border border-green-500/20 rounded-md px-4 py-2.5">
             <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -562,23 +566,21 @@ export default function ResultsPage() {
 
         {/* Blind Spot Callout */}
         {result.blindSpot?.name && (
-          <div className="relative overflow-hidden rounded-2xl border border-red-500/25 bg-gray-900/60 backdrop-blur-sm shadow-lg shadow-black/20">
-            {/* Subtle red gradient wash */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/8 via-transparent to-transparent pointer-events-none" />
-            <div className="relative px-6 py-5 flex flex-col gap-2">
-              <p className="text-xs font-semibold text-red-500/70 uppercase tracking-widest">Your Blind Spot</p>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-xl font-bold text-white">{result.blindSpot.name}</span>
-                <span className="text-gray-500 text-sm">—</span>
-                <span className="text-gray-300 text-sm leading-relaxed">{result.blindSpot.description}</span>
-              </div>
+          <div className="rounded-2xl border border-line border-l-2 border-l-brand bg-surface px-6 py-5 flex flex-col gap-1.5">
+            <p className="text-xs font-semibold text-brand uppercase tracking-widest">Your Blind Spot</p>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-lg font-semibold text-cream tracking-tight">{result.blindSpot.name}</span>
+              <span className="text-ink-muted text-sm">—</span>
+              <span className="text-gray-400 text-sm leading-relaxed">{result.blindSpot.description}</span>
             </div>
           </div>
         )}
 
         {/* Overall Score */}
-        <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 text-center shadow-xl shadow-black/30">
-          <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-6">Overall Score</p>
+        <div className="relative bg-surface border border-line rounded-2xl p-8 text-center overflow-hidden">
+          {/* Top accent bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
+          <p className="text-ink-muted text-xs font-medium uppercase tracking-widest mb-6">Overall Score</p>
           <div className="flex items-center justify-center mb-5">
             {(() => {
               const r = 72
@@ -597,17 +599,17 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="flex flex-col items-center gap-0.5">
-                    <span className={`text-6xl font-bold tabular-nums ${scoreColor(result.overallScore)}`}>
+                    <span className={`font-display font-black text-6xl tabular-nums ${scoreColor(result.overallScore)}`}>
                       {result.overallScore}
                     </span>
-                    <span className="text-gray-600 text-sm">/10</span>
+                    <span className="text-ink-muted text-sm">/10</span>
                   </div>
                 </div>
               )
             })()}
           </div>
-          <div className="inline-flex items-center gap-2 bg-gray-800/80 rounded-full px-4 py-1.5">
-            <span className="text-white font-bold">{grade}</span>
+          <div className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-md px-3 py-1.5">
+            <span className="text-cream font-semibold">{grade}</span>
             <span className="text-gray-400 text-sm">— {label}</span>
           </div>
         </div>
@@ -620,7 +622,7 @@ export default function ResultsPage() {
 
           if (gap <= 0) {
             return (
-              <div className="flex items-center gap-3 bg-green-500/8 border border-green-500/20 rounded-2xl px-5 py-4">
+              <div className="flex items-center gap-3 bg-green-500/[0.06] border border-green-500/20 rounded-xl px-5 py-4">
                 <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                   <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -645,7 +647,7 @@ export default function ResultsPage() {
           const pct = Math.min(99, Math.round((userScore / bench.score) * 100))
 
           return (
-            <div className={`border rounded-2xl px-5 py-4 flex flex-col gap-3 ${urgency.color}`}>
+            <div className={`border rounded-xl px-5 py-4 flex flex-col gap-3 ${urgency.color}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-white mb-0.5">
@@ -664,11 +666,11 @@ export default function ResultsPage() {
               </div>
               {/* Progress bar toward benchmark */}
               <div>
-                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <div className="flex justify-between text-xs text-ink-muted mb-1">
                   <span>Your score</span>
                   <span>Benchmark: {bench.score}</span>
                 </div>
-                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-700 ${urgency.bar}`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
@@ -678,13 +680,13 @@ export default function ResultsPage() {
 
         {/* Per-Question Breakdown */}
         <div>
-          <h2 className="text-white font-semibold text-lg mb-4">Question Breakdown</h2>
+          <h2 className="text-white font-display font-black text-xl mb-4">Question Breakdown</h2>
           <div className="space-y-4">
             {result.evaluations.map((ev, i) => (
-              <div key={i} className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-5 shadow-lg shadow-black/20">
+              <div key={i} className="bg-surface border border-line rounded-2xl p-5">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <p className="text-gray-200 font-medium text-sm leading-relaxed flex-1">
-                    <span className="text-indigo-400 font-semibold">Q{i + 1}.</span> {ev.question}
+                    <span className="text-brand font-semibold">Q{i + 1}.</span> {ev.question}
                   </p>
                   <span className={`text-2xl font-bold tabular-nums shrink-0 ${scoreColor(ev.average)}`}>
                     {ev.average}
@@ -696,10 +698,10 @@ export default function ResultsPage() {
                   {Object.entries(ev.scores).map(([key, val]) => (
                     <div key={key}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-500 capitalize">{key}</span>
+                        <span className="text-ink-muted capitalize">{key}</span>
                         <span className="text-gray-400">{val}/10</span>
                       </div>
-                      <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{ width: `${val * 10}%`, background: scoreBarGradient(val) }}
@@ -710,15 +712,15 @@ export default function ResultsPage() {
                 </div>
 
                 {/* STAR Analysis */}
-                <div className="border border-gray-700/60 rounded-xl p-4 mb-4">
+                <div className="border border-white/[0.08] rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">STAR Analysis</p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-500">Score</span>
+                      <span className="text-xs text-ink-muted">Score</span>
                       <span className={`text-sm font-bold tabular-nums ${ev.star.starScore >= 3 ? 'text-green-400' : ev.star.starScore >= 2 ? 'text-yellow-400' : 'text-red-400'}`}>
                         {ev.star.starScore}
                       </span>
-                      <span className="text-xs text-gray-600">/4</span>
+                      <span className="text-xs text-ink-muted">/4</span>
                     </div>
                   </div>
 
@@ -741,18 +743,18 @@ export default function ResultsPage() {
                   </div>
 
                   {ev.star.starCoaching && (
-                    <div className="flex gap-2 bg-indigo-500/8 border border-indigo-500/20 rounded-lg px-3 py-2">
-                      <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex gap-2 bg-brand/8 border border-brand/20 rounded-lg px-3 py-2">
+                      <svg className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-xs text-indigo-300 leading-relaxed">{ev.star.starCoaching}</p>
+                      <p className="text-xs text-brand leading-relaxed">{ev.star.starCoaching}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Answer preview */}
-                <div className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Your answer</p>
+                <div className="bg-surface-inset border border-white/[0.06] rounded-lg p-3">
+                  <p className="text-xs text-ink-muted font-medium mb-1">Your answer</p>
                   <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">{ev.answer}</p>
                 </div>
               </div>
@@ -762,9 +764,9 @@ export default function ResultsPage() {
 
         {/* Filler Words */}
         {fillerData && (
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-gray-700/50 flex items-center justify-between gap-4">
+            <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0">
                   {/* mic icon */}
@@ -774,7 +776,7 @@ export default function ResultsPage() {
                 </div>
                 <div>
                   <h2 className="text-white font-semibold text-sm">Filler Words</h2>
-                  <p className="text-xs text-gray-500">A habit you may not have noticed</p>
+                  <p className="text-xs text-ink-muted">A habit you may not have noticed</p>
                 </div>
               </div>
               {/* Fluency score badge */}
@@ -783,23 +785,23 @@ export default function ResultsPage() {
                   <span className={`text-2xl font-bold tabular-nums ${fillerData.score >= 8 ? 'text-green-400' : fillerData.score >= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
                     {fillerData.score}
                   </span>
-                  <span className="text-xs text-gray-600">/10</span>
+                  <span className="text-xs text-ink-muted">/10</span>
                 </div>
-                <span className="text-xs text-gray-500">Fluency</span>
+                <span className="text-xs text-ink-muted">Fluency</span>
               </div>
             </div>
 
             <div className="p-5 flex flex-col gap-5">
               {/* Summary callout */}
               {fillerData.totalFillers === 0 ? (
-                <div className="flex items-center gap-2.5 bg-green-500/8 border border-green-500/20 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2.5 bg-green-500/[0.06] border border-green-500/20 rounded-md px-4 py-3">
                   <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm text-green-300">No filler words detected — clean, confident delivery.</p>
                 </div>
               ) : (
-                <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3 border ${
+                <div className={`flex items-start gap-2.5 rounded-md px-4 py-3 border ${
                   fillerData.score >= 7
                     ? 'bg-yellow-500/8 border-yellow-500/20'
                     : 'bg-red-500/8 border-red-500/20'
@@ -821,7 +823,7 @@ export default function ResultsPage() {
 
               {/* Per-question bars */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">By Question</p>
+                <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">By Question</p>
                 <div className="flex flex-col gap-2">
                   {result!.evaluations.map((ev, i) => {
                     const count = fillerData.perAnswer[i].total
@@ -829,8 +831,8 @@ export default function ResultsPage() {
                     const barColor = count === 0 ? 'bg-gray-700' : count <= 2 ? 'bg-yellow-500' : 'bg-red-500'
                     return (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500 w-4 shrink-0 text-right">Q{i + 1}</span>
-                        <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <span className="text-xs text-ink-muted w-4 shrink-0 text-right">Q{i + 1}</span>
+                        <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                             style={{ width: `${Math.max(barPct, count > 0 ? 4 : 0)}%` }}
@@ -848,7 +850,7 @@ export default function ResultsPage() {
               {/* Top filler words */}
               {fillerData.ranked.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Most Used</p>
+                  <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Most Used</p>
                   <div className="flex flex-wrap gap-2">
                     {fillerData.ranked.map(({ word, count }, i) => (
                       <div
@@ -856,7 +858,7 @@ export default function ResultsPage() {
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${
                           i === 0
                             ? 'bg-red-500/12 border-red-500/25 text-red-300'
-                            : 'bg-gray-800 border-gray-700 text-gray-400'
+                            : 'bg-white/[0.04] border-white/10 text-gray-400'
                         }`}
                       >
                         <span>"{word}"</span>
@@ -867,7 +869,7 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              <p className="text-xs text-gray-700 leading-relaxed">
+              <p className="text-xs text-ink-muted leading-relaxed">
                 Detection covers: um, uh, like, so, literally, basically, right, you know, kind of, sort of.
                 Some may reflect intentional usage — use as a directional signal, not an exact count.
               </p>
@@ -878,40 +880,36 @@ export default function ResultsPage() {
         {/* Feedback Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Biggest Mistakes */}
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-red-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
+          <div className="bg-surface border border-line rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-white font-semibold text-sm">3 Biggest Mistakes</h3>
+              <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-cream font-semibold text-sm tracking-tight">3 Biggest Mistakes</h3>
             </div>
             <ol className="space-y-2.5">
               {result.biggestMistakes.map((mistake, i) => (
                 <li key={i} className="flex gap-2.5 text-sm">
-                  <span className="text-red-500 font-bold shrink-0 mt-0.5">{i + 1}.</span>
-                  <span className="text-gray-300 leading-relaxed">{mistake}</span>
+                  <span className="text-red-400 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
+                  <span className="text-gray-400 leading-relaxed">{mistake}</span>
                 </li>
               ))}
             </ol>
           </div>
 
           {/* Improvements */}
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-green-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
+          <div className="bg-surface border border-line rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <h3 className="text-white font-semibold text-sm">3 Key Improvements</h3>
+              <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <h3 className="text-cream font-semibold text-sm tracking-tight">3 Key Improvements</h3>
             </div>
             <ol className="space-y-2.5">
               {result.improvements.map((tip, i) => (
                 <li key={i} className="flex gap-2.5 text-sm">
-                  <span className="text-green-500 font-bold shrink-0 mt-0.5">{i + 1}.</span>
-                  <span className="text-gray-300 leading-relaxed">{tip}</span>
+                  <span className="text-green-400 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
+                  <span className="text-gray-400 leading-relaxed">{tip}</span>
                 </li>
               ))}
             </ol>
@@ -919,14 +917,12 @@ export default function ResultsPage() {
         </div>
 
         {/* Example Better Answer */}
-        <div className="bg-gray-900/60 backdrop-blur-sm border border-indigo-500/20 rounded-2xl p-5 shadow-lg shadow-black/20">
+        <div className="bg-surface border border-line rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-            </div>
-            <h3 className="text-white font-semibold text-sm">Example Better Answer</h3>
+            <svg className="w-4 h-4 text-brand shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+            <h3 className="text-cream font-semibold text-sm tracking-tight">Example Better Answer</h3>
           </div>
           <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
             {result.exampleBetterAnswer}
@@ -939,7 +935,7 @@ export default function ResultsPage() {
           <button
             onClick={generateShareCard}
             disabled={isGenerating || !sessionData}
-            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
+            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
           >
             {isGenerating ? (
               <>
@@ -960,7 +956,7 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push(`/interview/${sessionId}`)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-md shadow-indigo-600/25"
+            className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-blacktop font-semibold text-sm px-4 py-2.5 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -969,14 +965,14 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
+            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
           >
             New Interview
           </button>
 
           <button
             onClick={() => { setEmailOpen((o) => !o); setEmailStatus('idle'); setEmailError('') }}
-            className="flex items-center gap-2 bg-gray-800/80 hover:bg-gray-700/80 text-gray-200 font-semibold px-6 py-3 rounded-xl transition-all duration-200 border border-gray-700/60 hover:border-gray-600/70 shadow-md"
+            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -1004,13 +1000,13 @@ export default function ResultsPage() {
                     onChange={(e) => setEmailAddress(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendEmail()}
                     placeholder="your@email.com"
-                    className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                    className="flex-1 bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
                     autoFocus
                   />
                   <button
                     onClick={sendEmail}
                     disabled={emailStatus === 'sending' || !emailAddress.trim()}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm shadow-sm shadow-indigo-600/20 disabled:shadow-none"
+                    className="flex items-center gap-1.5 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-blacktop font-semibold px-4 py-2.5 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
                   >
                     {emailStatus === 'sending' ? (
                       <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -1031,7 +1027,7 @@ export default function ResultsPage() {
 
         {/* Share Your Feedback */}
         <div>
-          <h2 className="text-white font-semibold text-lg mb-4">Share Your Feedback</h2>
+          <h2 className="text-white font-display font-black text-xl mb-4">Share Your Feedback</h2>
           <iframe
             src="https://docs.google.com/forms/d/1aCvDzFyUWJx4-KkPzQ-FINWARaYjY6f276phmf4SxAU/viewform?embedded=true"
             width="100%"
@@ -1044,7 +1040,7 @@ export default function ResultsPage() {
 
         {/* Footer */}
         <footer className="pb-10 pt-4 text-center">
-          <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+          <p className="text-xs text-ink-muted/60">© 2026 Runback&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
         </footer>
       </div>
     </div>

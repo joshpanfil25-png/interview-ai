@@ -1,21 +1,62 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-let _supabase: SupabaseClient | null = null
-
-function getSupabase(): SupabaseClient {
-  if (_supabase) return _supabase
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
-    throw new Error('Supabase environment variables are not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local')
-  }
-  _supabase = createClient(url, key)
-  return _supabase
+/** Read an env var, treating empty/whitespace-only values as missing and trimming
+ *  stray whitespace/newlines (a common copy-paste mistake in the Vercel dashboard
+ *  that surfaces later as "TypeError: fetch failed"). */
+function readEnv(name: string): string | undefined {
+  const v = process.env[name]
+  const trimmed = v?.trim()
+  return trimmed ? trimmed : undefined
 }
 
+/**
+ * Create a Supabase client. Call this **inside a request handler**, never at module
+ * top level, so no client (and no network config) is constructed during `next build`.
+ *
+ * Note: `NEXT_PUBLIC_*` values are inlined at *build* time. If you change them in
+ * Vercel you must trigger a fresh deploy for API routes to pick up the new value.
+ */
+export function getSupabaseClient(): SupabaseClient {
+  // Prefer the public names this app uses; fall back to server-only names if present.
+  const url = readEnv('NEXT_PUBLIC_SUPABASE_URL') ?? readEnv('SUPABASE_URL')
+  const key = readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?? readEnv('SUPABASE_ANON_KEY')
+
+  const missing: string[] = []
+  if (!url) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+  if (!key) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  if (missing.length > 0) {
+    const msg =
+      `[supabase] Missing required env var(s): ${missing.join(', ')}. ` +
+      `Set them in Vercel → Project → Settings → Environment Variables (scope: Production) ` +
+      `and redeploy; for local dev add them to .env.local.`
+    console.error(msg)
+    throw new Error(msg)
+  }
+
+  // Surface a malformed URL early. A wrong project ref, a deleted project, or trailing
+  // whitespace all manifest at fetch time as the opaque "TypeError: fetch failed".
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.(co|in|net)\/?$/i.test(url!)) {
+    console.warn(
+      `[supabase] NEXT_PUBLIC_SUPABASE_URL="${url}" does not look like a standard ` +
+      `Supabase URL (expected https://<project-ref>.supabase.co). If the host is wrong ` +
+      `or the project no longer exists, requests will fail with "TypeError: fetch failed".`
+    )
+  }
+
+  return createClient(url!, key!)
+}
+
+/**
+ * Lazy proxy kept for client components (browser) that import `{ supabase }`.
+ * The real client is created on first property access — never at import/build time.
+ * Methods are bound to the real client so `this` resolves correctly.
+ */
+let _browserClient: SupabaseClient | null = null
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    return (getSupabase() as any)[prop]
+    if (!_browserClient) _browserClient = getSupabaseClient()
+    const value = Reflect.get(_browserClient as object, prop)
+    return typeof value === 'function' ? value.bind(_browserClient) : value
   },
 })
 

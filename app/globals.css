@@ -1,35 +1,80 @@
 @import "tailwindcss";
 
+@theme {
+  /* Runback brand tokens */
+  --color-cream: #F5F1E8;
+  --color-blacktop: #121212;
+  --color-brand: #FF5A1F;        /* Sprint Orange — primary/actions */
+  --color-brand-hover: #E64A12;
+  --color-volt: #D9FF3F;         /* scores/wins */
+  --color-turf: #0E3B2E;
+
+  /* Warm-dark surfaces */
+  --color-surface: #1a1712;
+  --color-surface-input: #241f18;
+  --color-surface-inset: #14110d;
+
+  /* Ink + lines */
+  --color-ink: #F5F1E8;
+  --color-ink-muted: #b8b0a2;
+  --color-line: rgba(245, 241, 232, 0.10);
+  --color-line-hover: rgba(245, 241, 232, 0.20);
+}
+
+:root {
+  /* Warm-dark shell — legacy vars kept for existing references */
+  --bg-top: #14110d;
+  --bg-bottom: #0e0b08;
+  --surface: #1a1712;       /* cards */
+  --surface-input: #241f18; /* input fields */
+  --surface-inset: #14110d; /* nested panels */
+  --border: rgba(245, 241, 232, 0.10);
+  --border-hover: rgba(245, 241, 232, 0.20);
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: linear-gradient(160deg, #0d0d22 0%, #07071a 45%, #050510 100%);
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  background-color: var(--bg-bottom);
+  background-attachment: fixed;
+  color: #F5F1E8;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Fade-in page animation */
+/* Display / wordmark face */
+.font-display {
+  font-family: var(--font-archivo), 'Archivo Black', sans-serif;
+}
+
+/* Quiet entrance — opacity only, no slide/bounce */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.45s ease-out both;
+  animation: fadeIn 0.18s ease-out both;
 }
 
-/* Smooth scrollbar */
+/* Scrollbar — neutral, minimal */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
-  border-radius: 3px;
+  background: rgba(245, 241, 232, 0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 241, 232, 0.22);
 }
 
 /* Line clamp */

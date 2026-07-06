@@ -7,9 +7,9 @@ import { countFillers, rankFillers } from '@/lib/fillerWords'
 
 function LogoMark({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
+      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
     </svg>
   )
 }
@@ -225,8 +225,8 @@ export default function InterviewPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading your interview...</p>
+          <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-ink-muted">Loading your interview...</p>
         </div>
       </div>
     )
@@ -239,7 +239,7 @@ export default function InterviewPage() {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-md shadow-indigo-600/25"
+            className="bg-brand-hover hover:bg-brand text-white text-sm px-5 py-2 rounded-md font-medium transition-colors"
           >
             Go Back
           </button>
@@ -270,49 +270,31 @@ export default function InterviewPage() {
     <div className="min-h-screen flex flex-col relative animate-fade-in">
       {/* Evaluating overlay */}
       {isEvaluating && (
-        <div className="absolute inset-0 z-50 bg-gray-950/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="absolute inset-0 z-50 bg-surface-inset/85 backdrop-blur-[2px] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="flex items-end gap-1.5">
-              {[0, 160, 320].map((delay) => (
-                <div
-                  key={delay}
-                  className="w-1.5 rounded-full bg-indigo-400"
-                  style={{
-                    height: 6,
-                    animation: 'barBounce 0.9s ease-in-out infinite',
-                    animationDelay: `${delay}ms`,
-                  }}
-                />
-              ))}
-            </div>
-            <p className="text-sm font-medium text-gray-400 tracking-wide">Evaluating your response…</p>
+            <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-ink-muted">Evaluating your response…</p>
           </div>
-          <style>{`
-            @keyframes barBounce {
-              0%, 100% { height: 6px; opacity: .4; }
-              50%       { height: 18px; opacity: 1; }
-            }
-          `}</style>
         </div>
       )}
       {/* Top bar */}
-      <div className="bg-gray-900/80 backdrop-blur-md border-b border-white/[0.06] px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/30">
-            <LogoMark className="w-4 h-4 text-white" />
+      <div className="bg-surface-inset border-b border-line px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
+            <LogoMark className="w-4 h-4 text-blacktop" />
           </div>
-          <span className="font-semibold text-white">Interview AI</span>
+          <span className="font-display font-semibold text-cream text-sm">runback</span>
         </div>
-        <span className="text-sm text-gray-500">Mock Interview</span>
+        <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-semibold">● LIVE</span>
       </div>
 
       <div className="flex flex-1 gap-0 overflow-hidden">
         {/* Webcam sidebar */}
-        <div className="w-72 bg-gray-900/70 backdrop-blur-sm border-r border-white/[0.06] flex flex-col items-center justify-start p-4 gap-3">
-          <div className="w-full aspect-video bg-gray-800 rounded-xl overflow-hidden relative">
+        <div className="w-72 bg-surface-inset border-r border-white/[0.08] flex flex-col items-center justify-start p-4 gap-3">
+          <div className="w-full aspect-video bg-surface-inset rounded-lg overflow-hidden relative">
             {webcamError ? (
               <div className="absolute inset-0 flex items-center justify-center text-center p-3">
-                <p className="text-gray-500 text-xs">{webcamError}</p>
+                <p className="text-ink-muted text-xs">{webcamError}</p>
               </div>
             ) : (
               <video
@@ -328,7 +310,7 @@ export default function InterviewPage() {
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-500 text-center">Your camera feed (not recorded)</p>
+          <p className="text-xs text-ink-muted text-center">Your camera feed (not recorded)</p>
         </div>
 
         {/* Main content */}
@@ -338,23 +320,23 @@ export default function InterviewPage() {
             {/* Progress */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-semibold text-cream">
                   Question {currentIndex + 1} of {questions.length}
                 </span>
-                <span className="text-sm text-gray-500">{Math.round(progress)}% complete</span>
+                <span className="text-sm text-ink-muted">{Math.round(progress)}% complete</span>
               </div>
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progress}%`, background: 'linear-gradient(to right, #6366f1, #a78bfa)' }}
+                  className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
               <div className="flex justify-between mt-1.5">
                 {questions.map((_, i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 mx-0.5 rounded-full transition-all duration-300 ${
-                      i < currentIndex ? 'bg-indigo-500' : i === currentIndex ? 'bg-indigo-400/80' : 'bg-gray-800'
+                    className={`h-1 flex-1 mx-0.5 rounded-full transition-colors ${
+                      i < currentIndex ? 'bg-brand' : i === currentIndex ? 'bg-brand/80' : 'bg-white/[0.08]'
                     }`}
                   />
                 ))}
@@ -367,11 +349,11 @@ export default function InterviewPage() {
                 {typeLabels[currentQuestion?.question_type] || currentQuestion?.question_type}
               </span>
 
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-colors duration-300 ${
-                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-gray-900/60 border-gray-700/50 backdrop-blur-sm'
+              <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors duration-300 ${
+                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-surface border-white/[0.08]'
               }`}>
                 <svg
-                  className={`w-3.5 h-3.5 shrink-0 ${timerExpired || isWarning ? 'text-red-400' : 'text-gray-500'} ${isWarning ? 'animate-pulse' : ''}`}
+                  className={`w-3.5 h-3.5 shrink-0 ${timerExpired || isWarning ? 'text-red-400' : 'text-ink-muted'}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -383,15 +365,17 @@ export default function InterviewPage() {
             </div>
 
             {/* Question text */}
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg shadow-black/20">
-              <p className="text-lg font-medium text-white leading-relaxed">
+            <div className="relative bg-surface border border-line rounded-2xl p-6 overflow-hidden">
+              {/* Top accent bar */}
+              <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
+              <p className="text-2xl font-semibold text-cream leading-relaxed tracking-tight">
                 {currentQuestion?.question_text}
               </p>
             </div>
 
             {/* Time's up warning */}
             {timerExpired && (
-              <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2.5 bg-red-500/[0.08] border border-red-500/20 rounded-md px-4 py-3">
                 <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -401,11 +385,11 @@ export default function InterviewPage() {
 
             {/* Feedback panel or answer controls */}
             {feedback ? (
-              <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 flex flex-col gap-5 shadow-lg shadow-black/20">
+              <div className="bg-surface border border-white/[0.08] rounded-xl p-6 flex flex-col gap-5">
                 {/* Score */}
                 <div className="flex items-center gap-3">
-                  <span className="text-4xl font-bold text-white tabular-nums">{feedback.score}</span>
-                  <span className="text-xl text-gray-500 font-medium">/&thinsp;10</span>
+                  <span className="font-display font-black text-5xl text-volt tabular-nums">{feedback.score}</span>
+                  <span className="text-xl text-ink-muted font-medium">/&thinsp;10</span>
                 </div>
 
                 {/* What they did well */}
@@ -424,7 +408,7 @@ export default function InterviewPage() {
                 <div className="flex items-center gap-3 pt-1">
                   <button
                     onClick={handleTryAgain}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -434,7 +418,7 @@ export default function InterviewPage() {
                   <div className="flex-1" />
                   <button
                     onClick={advanceQuestion}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-indigo-600/25"
+                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-blacktop font-semibold px-4 py-2 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
                   >
                     {currentIndex < questions.length - 1 ? (
                       <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
@@ -448,16 +432,16 @@ export default function InterviewPage() {
               <>
                 {/* Answer textarea */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-gray-300">Your Answer</label>
+                  <label className="text-[13px] font-medium text-ink-muted">Your Answer</label>
                   <textarea
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
                     placeholder={speechSupported ? 'Click "Start Recording" to speak, or type your answer here...' : 'Type your answer here...'}
                     rows={7}
-                    className="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors text-sm leading-relaxed backdrop-blur-sm"
+                    className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 resize-none transition-colors text-sm leading-relaxed"
                   />
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-ink-muted">
                       {transcript.trim().split(/\s+/).filter(Boolean).length} words
                     </p>
                     {(() => {
@@ -479,8 +463,8 @@ export default function InterviewPage() {
                   {speechSupported && (
                     <button
                       onClick={isRecording ? stopRecording : startRecording}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
-                        isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-200'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
+                        isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200'
                       }`}
                     >
                       {isRecording ? (
@@ -492,7 +476,7 @@ export default function InterviewPage() {
                   )}
 
                   {transcript && (
-                    <button onClick={() => setTranscript('')} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                    <button onClick={() => setTranscript('')} className="text-sm text-ink-muted hover:text-gray-300 transition-colors">
                       Clear
                     </button>
                   )}
@@ -502,7 +486,7 @@ export default function InterviewPage() {
                   <button
                     onClick={handleNextClick}
                     disabled={isSaving || isEvaluating || !transcript.trim()}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-indigo-600/25 disabled:shadow-none"
+                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-blacktop font-semibold px-4 py-2 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
                   >
                     {isSaving ? (
                       <>
@@ -523,7 +507,7 @@ export default function InterviewPage() {
             )}
 
             {error && (
-              <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
+              <p className="text-red-400 text-sm bg-red-500/[0.08] border border-red-500/20 rounded-md px-3 py-2.5">
                 {error}
               </p>
             )}

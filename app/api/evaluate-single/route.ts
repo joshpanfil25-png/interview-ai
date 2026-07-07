@@ -3,6 +3,9 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Fast haiku call, but add headroom to prevent edge-case truncation.
+export const maxDuration = 30
+
 export type SingleFeedback = {
   score: number
   didWell: string

@@ -514,7 +514,7 @@ export default function ResultsPage() {
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white font-medium mb-1">Evaluating your interview...</p>
-          <p className="text-ink-muted text-sm">Claude is reviewing your answers</p>
+          <p className="text-ink-muted text-sm">Runback is reviewing your answers</p>
         </div>
       </div>
     )

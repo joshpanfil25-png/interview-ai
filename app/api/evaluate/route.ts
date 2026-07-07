@@ -4,6 +4,10 @@ import { getSupabaseClient } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Full end-of-interview evaluation is one opus call with adaptive thinking over the
+// whole transcript — give it headroom above the platform default to avoid 504/truncation.
+export const maxDuration = 60
+
 export type StarRating = 'present' | 'weak' | 'missing'
 
 export type StarAnalysis = {
@@ -132,7 +136,7 @@ Return ONLY a valid JSON object with no extra text:
 
     const textBlock = response.content.find((b) => b.type === 'text')
     if (!textBlock || textBlock.type !== 'text') {
-      throw new Error('No text response from Claude')
+      throw new Error('No response from Runback')
     }
 
     let parsed: any
@@ -141,7 +145,7 @@ Return ONLY a valid JSON object with no extra text:
       if (!jsonMatch) throw new Error('No JSON found')
       parsed = JSON.parse(jsonMatch[0])
     } catch {
-      throw new Error('Failed to parse evaluation from Claude')
+      throw new Error('Failed to parse evaluation from Runback')
     }
 
     // Merge question/answer data with scores and STAR analysis

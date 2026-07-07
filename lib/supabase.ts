@@ -1,10 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-/** Read an env var, treating empty/whitespace-only values as missing and trimming
+/** Normalize an env var value: treat empty/whitespace-only values as missing and trim
  *  stray whitespace/newlines (a common copy-paste mistake in the Vercel dashboard
- *  that surfaces later as "TypeError: fetch failed"). */
-function readEnv(name: string): string | undefined {
-  const v = process.env[name]
+ *  that surfaces later as "TypeError: fetch failed").
+ *
+ *  Takes the value (not the name) so callers can pass a *static* `process.env.FOO`
+ *  member expression. Next.js only inlines `NEXT_PUBLIC_*` into the browser bundle
+ *  when it sees a literal `process.env.NEXT_PUBLIC_...` reference; a dynamic
+ *  `process.env[name]` lookup is NOT inlined and reads as undefined in the browser. */
+function cleanEnv(v: string | undefined): string | undefined {
   const trimmed = v?.trim()
   return trimmed ? trimmed : undefined
 }
@@ -18,8 +22,10 @@ function readEnv(name: string): string | undefined {
  */
 export function getSupabaseClient(): SupabaseClient {
   // Prefer the public names this app uses; fall back to server-only names if present.
-  const url = readEnv('NEXT_PUBLIC_SUPABASE_URL') ?? readEnv('SUPABASE_URL')
-  const key = readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') ?? readEnv('SUPABASE_ANON_KEY')
+  // These MUST be static `process.env.FOO` references so Next.js inlines the
+  // NEXT_PUBLIC_* values into the browser bundle (see cleanEnv doc comment).
+  const url = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL) ?? cleanEnv(process.env.SUPABASE_URL)
+  const key = cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ?? cleanEnv(process.env.SUPABASE_ANON_KEY)
 
   const missing: string[] = []
   if (!url) missing.push('NEXT_PUBLIC_SUPABASE_URL')

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Archivo } from "next/font/google";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/archivo/800.css";
+import "@fontsource/archivo/900.css";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const archivo = Archivo({ subsets: ["latin"], weight: ["800", "900"], variable: "--font-archivo" });
 
 export const metadata: Metadata = {
   title: "Runback — Run it back till it's easy",
@@ -22,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${archivo.variable} text-ink min-h-screen`}>
+      <body className="text-ink min-h-screen">
         {children}
       </body>
     </html>

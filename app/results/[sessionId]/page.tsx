@@ -543,7 +543,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen animate-fade-in">
       {/* Header */}
-      <div className="bg-surface-inset border-b border-line px-6 py-3 flex items-center justify-between">
+      <div className="bg-surface-inset border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
             <LogoMark className="w-4 h-4 text-blacktop" />
@@ -553,7 +553,7 @@ export default function ResultsPage() {
         <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide">● RESULTS</span>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Auto-email status banner */}
         {autoEmailStatus === 'sent' && (
           <div className="flex items-center gap-2.5 bg-green-500/[0.06] border border-green-500/20 rounded-md px-4 py-2.5">
@@ -924,7 +924,7 @@ export default function ResultsPage() {
             </svg>
             <h3 className="text-cream font-semibold text-sm tracking-tight">Example Better Answer</h3>
           </div>
-          <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+          <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words">
             {result.exampleBetterAnswer}
           </p>
         </div>

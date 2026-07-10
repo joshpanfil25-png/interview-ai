@@ -267,7 +267,7 @@ export default function InterviewPage() {
 
   // ── Main interview screen ────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col relative animate-fade-in">
+    <div className="min-h-screen flex flex-col relative animate-fade-in overflow-x-clip">
       {/* Evaluating overlay */}
       {isEvaluating && (
         <div className="absolute inset-0 z-50 bg-surface-inset/85 backdrop-blur-[2px] flex items-center justify-center">
@@ -278,7 +278,7 @@ export default function InterviewPage() {
         </div>
       )}
       {/* Top bar */}
-      <div className="bg-surface-inset border-b border-line px-6 py-3 flex items-center justify-between">
+      <div className="bg-surface-inset border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
             <LogoMark className="w-4 h-4 text-blacktop" />
@@ -288,10 +288,10 @@ export default function InterviewPage() {
         <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-semibold">● LIVE</span>
       </div>
 
-      <div className="flex flex-1 gap-0 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 gap-0 lg:overflow-hidden">
         {/* Webcam sidebar */}
-        <div className="w-72 bg-surface-inset border-r border-white/[0.08] flex flex-col items-center justify-start p-4 gap-3">
-          <div className="w-full aspect-video bg-surface-inset rounded-lg overflow-hidden relative">
+        <div className="w-full lg:w-72 bg-surface-inset border-b lg:border-b-0 lg:border-r border-white/[0.08] flex flex-col items-center justify-start p-4 gap-3">
+          <div className="w-full max-w-[260px] lg:max-w-none aspect-video bg-surface-inset rounded-lg overflow-hidden relative">
             {webcamError ? (
               <div className="absolute inset-0 flex items-center justify-center text-center p-3">
                 <p className="text-ink-muted text-xs">{webcamError}</p>
@@ -314,7 +314,7 @@ export default function InterviewPage() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col p-8 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-4 sm:p-8 lg:overflow-y-auto">
           <div className="max-w-2xl mx-auto w-full flex flex-col gap-6 flex-1">
 
             {/* Progress */}
@@ -365,7 +365,7 @@ export default function InterviewPage() {
             </div>
 
             {/* Question text */}
-            <div className="relative bg-surface border border-line rounded-2xl p-6 overflow-hidden">
+            <div className="relative bg-surface border border-line rounded-2xl p-5 sm:p-6 overflow-hidden">
               {/* Top accent bar */}
               <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
               <p className="text-2xl font-semibold text-cream leading-relaxed tracking-tight">
@@ -385,7 +385,7 @@ export default function InterviewPage() {
 
             {/* Feedback panel or answer controls */}
             {feedback ? (
-              <div className="bg-surface border border-white/[0.08] rounded-xl p-6 flex flex-col gap-5">
+              <div className="bg-surface border border-white/[0.08] rounded-xl p-5 sm:p-6 flex flex-col gap-5">
                 {/* Score */}
                 <div className="flex items-center gap-3">
                   <span className="font-display font-black text-5xl text-volt tabular-nums">{feedback.score}</span>
@@ -405,7 +405,7 @@ export default function InterviewPage() {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-3 pt-1">
+                <div className="flex flex-wrap items-center gap-3 gap-y-3 pt-1">
                   <button
                     onClick={handleTryAgain}
                     className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 transition-colors"
@@ -459,7 +459,7 @@ export default function InterviewPage() {
                 </div>
 
                 {/* Recording + submit row */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 gap-y-3">
                   {speechSupported && (
                     <button
                       onClick={isRecording ? stopRecording : startRecording}

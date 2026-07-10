@@ -34,12 +34,30 @@ const INTERVIEW_TYPES = [
   'Human Resources',
   'Nonprofit',
   'Government',
+  'Pre-Med / Health Professional School',
+  'Pre-Law / Law School',
+  'Graduate School (General)',
   'Coffee Chat',
 ]
+
+// Verticals that are school admissions interviews, not job interviews —
+// swaps the Company/Role labels to School/Program. Keep in sync with
+// SCHOOL_VERTICALS in app/api/generate-questions/route.ts.
+const SCHOOL_VERTICALS = new Set([
+  'Pre-Med / Health Professional School',
+  'Pre-Law / Law School',
+  'Graduate School (General)',
+])
+
+const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const
+const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'] as const
 
 export default function Home() {
   const router = useRouter()
   const [interviewType, setInterviewType] = useState('General')
+  const [questionFocus, setQuestionFocus] = useState<(typeof QUESTION_FOCUS_OPTIONS)[number]>('Balanced')
+  const [difficulty, setDifficulty] = useState<(typeof DIFFICULTY_OPTIONS)[number]>('Medium')
+  const isSchoolVertical = SCHOOL_VERTICALS.has(interviewType)
   const [firstName, setFirstName] = useState('')
   const [email, setEmail] = useState('')
   const [company, setCompany] = useState('')
@@ -201,12 +219,15 @@ export default function Home() {
     try {
       const sessionId = uuidv4()
       localStorage.setItem('sessionId', sessionId)
-      localStorage.setItem(`session_meta_${sessionId}`, JSON.stringify({ company, role, interviewType, firstName, email }))
+      localStorage.setItem(
+        `session_meta_${sessionId}`,
+        JSON.stringify({ company, role, interviewType, questionFocus, difficulty, firstName, email })
+      )
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId, interviewType }),
+        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId, interviewType, questionFocus, difficulty }),
       })
 
       if (!res.ok) {
@@ -218,7 +239,15 @@ export default function Home() {
       fetch('/api/log-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: firstName.trim(), email: email.trim(), interviewType, company: company.trim(), role: role.trim() }),
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          email: email.trim(),
+          interviewType,
+          questionFocus,
+          difficulty,
+          company: company.trim(),
+          role: role.trim(),
+        }),
       }).catch(() => {})
 
       router.push(`/interview/${sessionId}`)
@@ -330,6 +359,48 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Question Focus + Difficulty */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-semibold text-ink-muted tracking-tight mb-1.5">Question Focus</label>
+              <div className="relative">
+                <select
+                  value={questionFocus}
+                  onChange={(e) => setQuestionFocus(e.target.value as (typeof QUESTION_FOCUS_OPTIONS)[number])}
+                  className="w-full appearance-none bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors cursor-pointer pr-10"
+                >
+                  {QUESTION_FOCUS_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt} className="bg-surface">{opt}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-ink-muted tracking-tight mb-1.5">Difficulty</label>
+              <div className="relative">
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as (typeof DIFFICULTY_OPTIONS)[number])}
+                  className="w-full appearance-none bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors cursor-pointer pr-10"
+                >
+                  {DIFFICULTY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt} className="bg-surface">{opt}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* First Name + Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -360,25 +431,29 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Company + Role */}
+          {/* Company + Role (relabeled to School + Program for admissions verticals) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">Company <span className="text-red-500">*</span></label>
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">
+                {isSchoolVertical ? 'Target School' : 'Company'} <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="e.g. Google"
+                placeholder={isSchoolVertical ? 'e.g. Johns Hopkins' : 'e.g. Google'}
                 className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">Role <span className="text-red-500">*</span></label>
+              <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">
+                {isSchoolVertical ? 'Program / Degree' : 'Role'} <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                placeholder="e.g. Software Engineer"
+                placeholder={isSchoolVertical ? 'e.g. MD Program' : 'e.g. Software Engineer'}
                 className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-[15px] text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
               />
             </div>

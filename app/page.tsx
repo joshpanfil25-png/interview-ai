@@ -256,7 +256,7 @@ export default function Home() {
         </nav>
 
         {/* Hero + session */}
-        <section className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 items-start pt-6 lg:pt-10">
+        <section className="grid lg:grid-cols-[1.15fr_0.85fr] gap-10 lg:gap-12 items-start pt-6 lg:pt-10">
           {/* LEFT — thesis */}
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 self-start bg-white/[0.06] border border-line rounded-full px-3.5 py-1.5">
@@ -264,7 +264,7 @@ export default function Home() {
               <span className="text-xs text-ink-muted">93% of grads walk in anxious. Not you.</span>
             </div>
 
-            <h1 className="font-display text-[52px] sm:text-[72px] font-black leading-[0.9] tracking-tight text-cream">
+            <h1 className="font-display text-[40px] sm:text-[72px] font-black leading-[0.9] tracking-tight text-cream">
               DO THE<br />
               <span className="text-brand">REPS</span><br />
               BEFORE<br />
@@ -277,16 +277,16 @@ export default function Home() {
 
             {/* Scoreboard */}
             <div className="flex border border-line rounded-2xl overflow-hidden w-full">
-              <div className="flex-1 border-r border-line px-5 py-4">
-                <p className="font-display font-black text-3xl text-volt">17</p>
+              <div className="flex-1 border-r border-line px-3 sm:px-5 py-4">
+                <p className="font-display font-black text-2xl sm:text-3xl text-volt">17</p>
                 <p className="text-xs text-ink-muted mt-1">interview types</p>
               </div>
-              <div className="flex-1 border-r border-line px-5 py-4">
-                <p className="font-display font-black text-3xl text-cream">∞</p>
+              <div className="flex-1 border-r border-line px-3 sm:px-5 py-4">
+                <p className="font-display font-black text-2xl sm:text-3xl text-cream">∞</p>
                 <p className="text-xs text-ink-muted mt-1">reps, free to start</p>
               </div>
-              <div className="flex-1 px-5 py-4">
-                <p className="font-display font-black text-3xl text-brand">60s</p>
+              <div className="flex-1 px-3 sm:px-5 py-4">
+                <p className="font-display font-black text-2xl sm:text-3xl text-brand">60s</p>
                 <p className="text-xs text-ink-muted mt-1">to your first question</p>
               </div>
             </div>
@@ -331,7 +331,7 @@ export default function Home() {
           </div>
 
           {/* First Name + Email */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">
                 First Name <span className="text-red-500">*</span>
@@ -361,7 +361,7 @@ export default function Home() {
           </div>
 
           {/* Company + Role */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[13px] font-semibold text-ink-muted mb-1.5">Company <span className="text-red-500">*</span></label>
               <input

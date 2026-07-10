@@ -36,6 +36,13 @@
   box-sizing: border-box;
 }
 
+/* Belt-and-suspenders against fixed-position decorative glows that sit
+   off-viewport; `main` overflow-x-hidden does not clip fixed descendants. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);

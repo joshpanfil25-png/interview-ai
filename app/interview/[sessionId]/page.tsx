@@ -314,8 +314,8 @@ export default function InterviewPage() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col p-4 sm:p-8 lg:overflow-y-auto">
-          <div className="max-w-2xl mx-auto w-full flex flex-col gap-6 flex-1">
+        <div className="flex-1 min-w-0 flex flex-col p-4 sm:p-8 lg:overflow-y-auto">
+          <div className="max-w-2xl mx-auto w-full min-w-0 flex flex-col gap-6 flex-1">
 
             {/* Progress */}
             <div>
@@ -368,7 +368,7 @@ export default function InterviewPage() {
             <div className="relative bg-surface border border-line rounded-2xl p-5 sm:p-6 overflow-hidden">
               {/* Top accent bar */}
               <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
-              <p className="text-2xl font-semibold text-cream leading-relaxed tracking-tight">
+              <p className="text-2xl font-semibold text-cream leading-relaxed tracking-tight break-words">
                 {currentQuestion?.question_text}
               </p>
             </div>

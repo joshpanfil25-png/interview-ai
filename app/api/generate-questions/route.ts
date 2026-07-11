@@ -13,6 +13,65 @@ const SCHOOL_VERTICALS = new Set([
   'Business School / MBA',
 ])
 
+// Known firm interview-style calibration. Applied only when the entered company
+// clearly matches a known firm (word-boundary match on an alias) — we never
+// fabricate firm-specific detail for an unknown company; unmatched companies just
+// fall back to the vertical guidance, with no calibration line added.
+const COMPANY_CALIBRATION: Array<{ aliases: string[]; note: string }> = [
+  {
+    aliases: ['mckinsey'],
+    note: 'McKinsey scores a Personal Experience Interview (PEI) separately from the case, around leadership, personal impact, and entrepreneurial drive — favor one deep story per theme over breadth. Cases are interviewer-led, so expect the interviewer to steer mid-case.',
+  },
+  {
+    aliases: ['bcg', 'boston consulting'],
+    note: 'BCG cases are more candidate-led than McKinsey — the candidate should drive the structure and pacing. Later rounds often include a written or data-interpretation case, so comfort reading exhibits quickly matters.',
+  },
+  {
+    aliases: ['bain'],
+    note: 'Bain weights culture fit unusually high — the "would I enjoy a long week with this person" test — so reward genuine warmth alongside competence. Its cases layer business judgment on top of the math, so a mechanically correct answer that ignores commercial reality gets pushed on.',
+  },
+  {
+    aliases: ['amazon', 'aws'],
+    note: 'Amazon maps nearly every behavioral question to a Leadership Principle (Customer Obsession, Ownership, Bias for Action, Dive Deep, Disagree and Commit, Deliver Results). Expect very deep, repeated follow-ups on a single story — depth over breadth.',
+  },
+  {
+    aliases: ['google', 'alphabet'],
+    note: 'Google scores behavioral answers on general cognitive ability and "Googleyness" as much as the specific answer, so structure and self-awareness matter. In technical rounds, collaborative communication is graded alongside correctness.',
+  },
+  {
+    aliases: ['meta', 'facebook', 'instagram'],
+    note: 'Meta behavioral centers on a few signals — drive and impact, working with others, and resolving conflict — with direct "tell me about a time" drilling on the candidate’s specific role in a team outcome. Technical rounds move fast.',
+  },
+  {
+    aliases: ['microsoft'],
+    note: 'Microsoft leans on growth mindset and collaboration — a real failure and what was learned lands well. Rounds often blend technical and behavioral in one conversation, and "why this team" genuinely matters.',
+  },
+  {
+    aliases: ['deloitte', 'pwc', 'pricewaterhouse', 'kpmg', 'ernst', 'ey'],
+    note: 'At a Big 4 firm the pivotal question is genuinely "why our firm over the other three" — a generic answer is transparent, so anchor on one specific, verifiable reason. Interviews are competency/behavioral-based and weight fit, coachability, and detail-orientation heavily.',
+  },
+  {
+    aliases: ['goldman', 'jpmorgan', 'jp morgan', 'morgan stanley'],
+    note: 'At a bulge-bracket bank, fit interviews hammer "why banking," "why this bank," and a deal or markets story the candidate can speak to. Expect the same core questions across many back-to-back superday interviewers, so a consistent, non-robotic core narrative matters.',
+  },
+  {
+    aliases: ['teach for america', 'tfa'],
+    note: 'Teach For America’s process centers on a sample teaching lesson and a group activity alongside the interview, and screens for a demonstrated record of achievement, perseverance, and commitment to educational equity — concrete examples over idealism.',
+  },
+]
+
+// Returns the calibration note for a known firm, or null. Matches an alias only
+// on a word boundary so short aliases (e.g. "ey") do not match inside other words.
+function matchCompanyCalibration(company: string): string | null {
+  for (const entry of COMPANY_CALIBRATION) {
+    for (const alias of entry.aliases) {
+      const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (new RegExp(`\\b${escaped}\\b`, 'i').test(company)) return entry.note
+    }
+  }
+  return null
+}
+
 const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const
 type QuestionFocus = (typeof QUESTION_FOCUS_OPTIONS)[number]
 
@@ -130,6 +189,9 @@ export async function POST(req: NextRequest) {
 
     const guidance = verticalGuidance[interviewType] ?? verticalGuidance['General']
 
+    // Firm-specific interview-style note, only when the company is a known firm.
+    const calibration = matchCompanyCalibration(company)
+
     // Controls how many of each question type appear, and in what order.
     // Every type must still be one of behavioral | role-specific | curveball —
     // these match the Supabase question_type check constraint, so no schema change is needed.
@@ -188,7 +250,7 @@ export async function POST(req: NextRequest) {
 
 Interview vertical: ${interviewType}
 Vertical guidance: ${guidance}
-
+${calibration ? `\nKnown interview style at ${company} (use this to make the questions realistic for how this specific firm actually interviews, without naming the firm in the question text): ${calibration}\n` : ''}
 ${difficultyGuidance[level]}
 
 ${antiRepeatInstruction}

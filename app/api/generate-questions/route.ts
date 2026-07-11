@@ -11,6 +11,7 @@ const SCHOOL_VERTICALS = new Set([
   'Pre-Law / Law School',
   'Graduate School (General)',
   'Business School / MBA',
+  'Pharmacy / Dental / Vet / PT School',
 ])
 
 // Known firm interview-style calibration. Applied only when the entered company
@@ -51,8 +52,32 @@ const COMPANY_CALIBRATION: Array<{ aliases: string[]; note: string }> = [
     note: 'At a Big 4 firm the pivotal question is genuinely "why our firm over the other three" — a generic answer is transparent, so anchor on one specific, verifiable reason. Interviews are competency/behavioral-based and weight fit, coachability, and detail-orientation heavily.',
   },
   {
-    aliases: ['goldman', 'jpmorgan', 'jp morgan', 'morgan stanley'],
+    aliases: ['goldman', 'jpmorgan', 'jp morgan', 'morgan stanley', 'citi', 'citibank', 'citigroup', 'bank of america', 'bofa', 'barclays'],
     note: 'At a bulge-bracket bank, fit interviews hammer "why banking," "why this bank," and a deal or markets story the candidate can speak to. Expect the same core questions across many back-to-back superday interviewers, so a consistent, non-robotic core narrative matters.',
+  },
+  {
+    aliases: ['evercore', 'lazard', 'centerview', 'moelis', 'pjt'],
+    note: 'At an elite advisory boutique, fit interviews go deep on genuine interest in advisory work, a specific deal or the firm’s model, and strong technicals, in a smaller and more personal process where fit and polish weigh heavily.',
+  },
+  {
+    aliases: ['apple'],
+    note: 'Apple interviews emphasize deep functional expertise, craft and attention to detail, and cross-functional collaboration in a secrecy-conscious culture — expect substantive depth in the candidate’s actual domain over broad "why tech" prompts.',
+  },
+  {
+    aliases: ['netflix'],
+    note: 'Netflix screens hard against its culture — freedom and responsibility, a high-performance bar, and candid feedback — so expect direct questions about judgment, ownership, and giving or receiving candor, calibrated to a senior bar.',
+  },
+  {
+    aliases: ['stripe'],
+    note: 'Stripe values rigorous first-principles problem-solving, user empathy, and unusually clear written and verbal reasoning — expect practical, real-world problems and a high bar on communication.',
+  },
+  {
+    aliases: ['tesla', 'spacex'],
+    note: 'Tesla and SpaceX run fast, intense interviews that probe hands-on, first-principles engineering on real projects and a high tolerance for pace and pressure — expect specific technical depth and evidence of ownership over polish.',
+  },
+  {
+    aliases: ['accenture'],
+    note: 'Accenture uses competency-based interviews and, for many roles, a case or group exercise — expect a specific "why Accenture," teamwork, and client-delivery scenarios over pure technical trivia.',
   },
   {
     aliases: ['teach for america', 'tfa'],
@@ -181,6 +206,8 @@ export async function POST(req: NextRequest) {
         'This is a school admissions interview, not a job interview — the candidate is applying to this school for this graduate program. Ground questions in academic and research motivation, a deep-dive on a specific project or area of study, handling an academic or research setback, and collaboration within an academic or lab setting. The role-specific question should be a "why this program at this school" fit question tied to something specific (a faculty member, a research focus, a curriculum strength). Avoid generic "why grad school" prompts — push for a specific, examined reason.',
       'Business School / MBA':
         'This is an MBA admissions interview, not a job interview — the candidate is applying to this business school for their MBA. Ground questions in leadership and impact stories (STAR-structured, with the candidate’s individual contribution clearly distinguishable from the team’s), a specific and credible post-MBA goal with a real why-now, and genuine fit with this school. The role-specific question should be a "why an MBA, why this school, why now" fit question tied to something specific (a program, club, professor, or value), or a leadership/teamwork scenario — never a generic "why do you want an MBA". Push for a specific, examined reason.',
+      'Pharmacy / Dental / Vet / PT School':
+        'This is a health-professional-school admissions interview for pharmacy, dental, veterinary, physical therapy, or optometry — not a job interview, and separate from medical or nursing school (use the Pre-Med vertical for those). Ground questions in what these interviews actually test: a specific, examined motivation for this exact profession (never a platitude about helping people or animals), a field-appropriate ethics or judgment scenario (a patient or pet owner who cannot afford care, a suspected colleague error, a scope-of-practice limit), empathy and communication in a clinical or caregiving context, and resilience after a real setback. The role-specific question should be a "why this profession and why this school" fit question or a light situational-judgment scenario — never a clinical-knowledge quiz.',
       'Coffee Chat':
         'This is an informal networking conversation, not a formal interview. Replace the behavioral questions with 4 natural conversation-starter questions (career journey, advice, industry trends, day-to-day experience). Replace the role-specific question with a thoughtful question about their path. The curveball should be a memorable, genuine question that shows curiosity. Keep all questions open-ended and conversational.',
       'General':

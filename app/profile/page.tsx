@@ -35,6 +35,9 @@ export default function ProfilePage() {
   const { user, loading: authLoading } = useUser()
   const [sessions, setSessions] = useState<SessionRow[] | null>(null)
   const [loadError, setLoadError] = useState('')
+  // Phase 4 — the user's saved resume text (null = none / not loaded yet).
+  const [savedResume, setSavedResume] = useState<string | null>(null)
+  const [clearingResume, setClearingResume] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -42,6 +45,7 @@ export default function ProfilePage() {
       // Signed out (or signed out mid-session) — clear any prior list so the
       // guest prompt shows. No redirect, no crash.
       setSessions(null)
+      setSavedResume(null)
       setLoadError('')
       return
     }
@@ -69,6 +73,17 @@ export default function ProfilePage() {
       } else {
         setSessions((data ?? []) as SessionRow[])
       }
+
+      // Saved resume (Phase 4) — best-effort. A missing resume_text column
+      // (pre-migration) surfaces as an error, which we treat as "no saved
+      // resume" so the section renders cleanly.
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('resume_text')
+        .eq('id', uid)
+        .single()
+      if (!active) return
+      setSavedResume(profErr ? null : ((prof?.resume_text as string | null) ?? null))
     }
 
     load()
@@ -78,6 +93,16 @@ export default function ProfilePage() {
   }, [user, authLoading])
 
   const isLoading = authLoading || (!!user && sessions === null && !loadError)
+
+  // Delete the saved resume (explicit user action, own row only).
+  async function handleClearSavedResume() {
+    if (!user || clearingResume) return
+    setClearingResume(true)
+    const supabase = getSupabaseBrowserClient()
+    const { error } = await supabase.from('profiles').update({ resume_text: null }).eq('id', user.id)
+    if (!error) setSavedResume(null)
+    setClearingResume(false)
+  }
 
   return (
     <div className="min-h-screen flex flex-col animate-fade-in">
@@ -175,13 +200,42 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/*
-          ===== Phase 4 placeholder: Saved Resume =====
-          A future "Saved Resume" section slots in here as its own <section>
-          once resume persistence lands. Intentionally omitted in Phase 3 (no
-          resume code yet) — the page is structured so it drops in without a
-          redesign.
-        */}
+        {/* ===== Saved Resume (Phase 4) ===== */}
+        {user && !authLoading && (
+          <section className="mt-12">
+            <h2 className="font-display font-black text-xl text-cream tracking-tight">Saved Resume</h2>
+            <p className="text-sm text-ink-muted mt-1">Auto-filled into new mocks so you don&apos;t re-upload each time.</p>
+            <div className="mt-5 bg-surface border border-line rounded-2xl p-6 max-w-2xl">
+              {savedResume && savedResume.trim().length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2 text-emerald-300">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium">Resume saved</span>
+                  </div>
+                  <p className="text-xs text-ink-muted leading-relaxed whitespace-pre-wrap">
+                    {savedResume.slice(0, 200).trim()}{savedResume.length > 200 ? '…' : ''}
+                  </p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleClearSavedResume}
+                      disabled={clearingResume}
+                      className="text-sm text-ink-muted hover:text-red-300 underline decoration-white/20 hover:decoration-red-400/50 transition-colors disabled:opacity-50"
+                    >
+                      {clearingResume ? 'Clearing…' : 'Clear saved resume'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-ink-muted">
+                  No saved resume yet — upload one during your next mock and it&apos;ll be saved here automatically.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )

@@ -35,6 +35,7 @@ const INTERVIEW_TYPES = [
   // Product, engineering, data & design
   'Tech',
   'Software Engineering',
+  'Engineering (Non-Software)',
   'Product Management',
   'Project / Program Management',
   'Data / Analytics',

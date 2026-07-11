@@ -4,8 +4,9 @@ import { getSupabaseClient } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// Full end-of-interview evaluation is one opus call with adaptive thinking over the
-// whole transcript — give it headroom above the platform default to avoid 504/truncation.
+// Full end-of-interview evaluation is one Opus call over the whole transcript.
+// Runs without extended thinking (see the model call below), so it completes well
+// within the platform's default function limit.
 export const maxDuration = 60
 
 export type StarRating = 'present' | 'weak' | 'missing'
@@ -134,21 +135,31 @@ Return ONLY a valid JSON object with no extra text:
   "exampleBetterAnswer": "A detailed example of how to answer one of the weakest questions better"
 }`
 
+    // One Opus call over the whole transcript, no extended thinking — same shape
+    // as the other Opus routes here (generate-questions, rewrite-resume,
+    // grade-resume). The original bug: this route uniquely enabled adaptive
+    // thinking, which shares the max_tokens budget with the output, so long
+    // reasoning could leave no room for the JSON → empty text block → "No
+    // response" (500). Running without thinking gives the full budget to the
+    // evaluation JSON and removes the starvation entirely.
     const response = await client.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 4096,
-      thinking: { type: 'adaptive' },
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const textBlock = response.content.find((b) => b.type === 'text')
-    if (!textBlock || textBlock.type !== 'text') {
+    const evaluationText = response.content
+      .map((b) => (b.type === 'text' ? b.text : ''))
+      .join('')
+      .trim()
+
+    if (!evaluationText) {
       throw new Error('No response from Runback')
     }
 
     let parsed: any
     try {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+      const jsonMatch = evaluationText.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('No JSON found')
       parsed = JSON.parse(jsonMatch[0])
     } catch {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { getSupabaseClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -55,7 +55,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the Supabase client at request time (never at module/build time).
-    const supabase = getSupabaseClient()
+    // Use the cookie-aware SSR client so a logged-in user's session (sent with
+    // this same-origin fetch) resolves auth.uid() and RLS returns their owned
+    // rows. Guests send no cookie → behaves as anon → null-owned rows visible,
+    // exactly as before.
+    const supabase = await createSupabaseServerClient()
 
     // Fetch questions
     const { data: questions, error: qError } = await supabase

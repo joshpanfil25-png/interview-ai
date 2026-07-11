@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evaluate/route'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
 import { saveHistoryEntry } from '@/lib/history'
 import { ResultsAuthNudge } from '@/components/auth/ResultsAuthNudge'
@@ -59,12 +59,20 @@ export default function ResultsPage() {
   }, [sessionId])
 
   useEffect(() => {
-    supabase
-      .from('sessions')
-      .select('company, role')
-      .eq('id', sessionId)
-      .single()
-      .then(({ data }) => { if (data) setSessionData(data) })
+    async function loadSession() {
+      const supabase = getSupabaseBrowserClient()
+      // Hydrate the auth session first so a logged-in user's JWT is attached
+      // (auth.uid() = user_id). Guests have no session → anon read of their
+      // null-owned session, unchanged.
+      await supabase.auth.getSession()
+      const { data } = await supabase
+        .from('sessions')
+        .select('company, role')
+        .eq('id', sessionId)
+        .single()
+      if (data) setSessionData(data)
+    }
+    loadSession()
   }, [sessionId])
 
   // Save to localStorage history once evaluation + session data are both ready
@@ -110,6 +118,18 @@ export default function ResultsPage() {
       },
       fillerCount: totalFillers,
     })
+
+    // Persist the overall score to the session row so /profile can show it
+    // across devices (localStorage history is per-device). Best-effort for
+    // everyone: logged-in users update their own row and guests update their
+    // own null-owned row (RLS permits both), scoped to this session id. Not
+    // awaited and errors are swallowed, so score persistence can never block or
+    // break the results page — this does not change how scores are computed.
+    getSupabaseBrowserClient()
+      .from('sessions')
+      .update({ score: result.overallScore })
+      .eq('id', sessionId)
+      .then(() => {}, () => {})
   }, [result, sessionData, sessionId])
 
   // Auto-send email once evaluation + session data are ready

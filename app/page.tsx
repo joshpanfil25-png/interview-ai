@@ -8,6 +8,8 @@ import type { HistoryEntry } from '@/lib/history'
 import type { ResumeGrade } from '@/app/api/grade-resume/route'
 import type { ResumeRewriteGuide } from '@/app/api/rewrite-resume/route'
 import { NavAuth } from '@/components/auth/NavAuth'
+import { useUser } from '@/lib/useUser'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -99,6 +101,7 @@ function hasUsableText(text: string): boolean {
 
 export default function Home() {
   const router = useRouter()
+  const { user } = useUser()
   const [interviewType, setInterviewType] = useState('General')
   const [questionFocus, setQuestionFocus] = useState<(typeof QUESTION_FOCUS_OPTIONS)[number]>('Balanced')
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTY_OPTIONS)[number]>('Medium')
@@ -113,10 +116,17 @@ export default function Home() {
   // Resume parse feedback, kept separate from the form-validation `error` line.
   const [resumeNotice, setResumeNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [showManualPaste, setShowManualPaste] = useState(false)
+  // Phase 4: true when the resume field was auto-filled from the logged-in
+  // user's saved resume (drives the "Using your saved resume" indicator). Any
+  // upload/paste/clear flips it off — they've overridden for this session.
+  const [usingSavedResume, setUsingSavedResume] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guards the one-shot saved-resume auto-fill: once the user uploads, pastes,
+  // or clears, we never overwrite their choice with the saved resume.
+  const resumeTouchedRef = useRef(false)
   const [history, setHistory] = useState<HistoryEntry[] | null>(null)
 
   // Resume grader state
@@ -135,6 +145,37 @@ export default function Home() {
   useEffect(() => {
     setHistory(loadHistory().slice(0, 5))
   }, [])
+
+  // Phase 4 — auto-fill a logged-in user's saved resume. Only prefills an
+  // untouched field (nothing uploaded/pasted/cleared yet), so it never clobbers
+  // an in-progress upload. Guests and users without a saved resume are
+  // unaffected. Resilient to the resume_text column not existing yet
+  // (pre-migration): any error is treated as "no saved resume".
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    ;(async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('resume_text')
+          .eq('id', user.id)
+          .single()
+        if (!active || error) return
+        const saved = data?.resume_text
+        if (!saved || !hasUsableText(saved)) return
+        if (resumeTouchedRef.current) return // user already provided/cleared one
+        setResumeText(saved)
+        setUsingSavedResume(true)
+      } catch {
+        /* no saved resume / column missing — leave the empty flow untouched */
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [user])
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const pdfjsLib = await import('pdfjs-dist')
@@ -160,6 +201,9 @@ export default function Home() {
   }
 
   const handleFile = async (file: File) => {
+    // Any upload overrides an auto-filled saved resume for this session.
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
     if (file.type !== 'application/pdf') {
       setResumeNotice({ type: 'error', msg: 'That file isn’t a PDF. Upload a PDF resume, or paste your resume text instead.' })
       setShowManualPaste(true)
@@ -210,6 +254,8 @@ export default function Home() {
   // Manual paste — converges on the same resumeText + usable-text check as PDF.
   const handleManualResumeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
     setResumeText(text)
     setFileName('') // typed text supersedes any uploaded file
     resetAnalysisState()
@@ -221,8 +267,13 @@ export default function Home() {
     }
   }
 
-  // Clear resume entirely — lets the user proceed with no resume after a failed parse.
+  // Clear resume entirely — lets the user proceed with no resume after a failed
+  // parse. Session-level only: this does NOT delete a saved resume (submitting
+  // with an empty field skips the save-upsert below). The saved copy is removed
+  // only from /profile.
   const clearResume = () => {
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
     setResumeText('')
     setFileName('')
     setResumeNotice(null)
@@ -330,6 +381,18 @@ export default function Home() {
         `session_meta_${sessionId}`,
         JSON.stringify({ company, role, interviewType, questionFocus, difficulty, firstName, email })
       )
+
+      // Phase 4 — persist this resume to the logged-in user's profile so it
+      // auto-fills next time. Guests (user null) write nothing. The submit guard
+      // above already ensured resumeText is empty or usable, and hasUsableText
+      // re-checks here so an empty field never overwrites a saved resume.
+      // Fire-and-forget: never blocks starting the mock, errors swallowed.
+      if (user && hasUsableText(resumeText)) {
+        getSupabaseBrowserClient()
+          .from('profiles')
+          .upsert({ id: user.id, resume_text: resumeText }, { onConflict: 'id' })
+          .then(() => {}, () => {})
+      }
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
@@ -602,6 +665,25 @@ export default function Home() {
                 </>
               )}
             </div>
+
+            {/* Phase 4 — saved-resume indicator (logged-in users with a saved resume) */}
+            {usingSavedResume && (
+              <div className="flex items-start gap-3 rounded-md px-3 py-2.5 text-xs bg-brand/[0.08] border border-brand/25 text-brand">
+                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="leading-relaxed flex-1">
+                  Using your saved resume. Upload or paste a different one to replace it, or clear it for this session.
+                </span>
+                <button
+                  type="button"
+                  onClick={clearResume}
+                  className="shrink-0 underline decoration-brand/40 hover:decoration-brand text-brand/90 hover:text-brand transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
 
             {/* Resume parse notice — distinct from the form-validation error line */}
             {resumeNotice && (

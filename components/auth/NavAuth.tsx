@@ -58,10 +58,17 @@ export function NavAuth() {
             <p className="text-xs text-ink-muted">Signed in as</p>
             <p className="text-sm text-cream truncate">{user.email}</p>
           </div>
+          <a
+            href="/profile"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-sm text-cream hover:bg-white/[0.04] transition-colors"
+          >
+            Profile
+          </a>
           <button
             type="button"
             onClick={() => { setOpen(false); signOut() }}
-            className="w-full text-left px-4 py-2.5 text-sm text-cream hover:bg-white/[0.04] transition-colors"
+            className="w-full text-left px-4 py-2.5 text-sm text-cream hover:bg-white/[0.04] transition-colors border-t border-line"
           >
             Sign out
           </button>

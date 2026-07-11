@@ -118,6 +118,18 @@ export default function ResultsPage() {
       },
       fillerCount: totalFillers,
     })
+
+    // Persist the overall score to the session row so /profile can show it
+    // across devices (localStorage history is per-device). Best-effort for
+    // everyone: logged-in users update their own row and guests update their
+    // own null-owned row (RLS permits both), scoped to this session id. Not
+    // awaited and errors are swallowed, so score persistence can never block or
+    // break the results page — this does not change how scores are computed.
+    getSupabaseBrowserClient()
+      .from('sessions')
+      .update({ score: result.overallScore })
+      .eq('id', sessionId)
+      .then(() => {}, () => {})
   }, [result, sessionData, sessionId])
 
   // Auto-send email once evaluation + session data are ready

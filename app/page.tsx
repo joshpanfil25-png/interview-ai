@@ -17,25 +17,54 @@ function LogoMark({ className }: { className?: string }) {
   )
 }
 
+// Order groups related verticals so the (now long) dropdown stays scannable.
+// Every entry here must have a matching key in `verticalGuidance` in
+// app/api/generate-questions/route.ts, and school-admissions entries must also
+// be listed in SCHOOL_VERTICALS below (and in the route).
 const INTERVIEW_TYPES = [
   'General',
+  // Business, finance & professional services
   'Finance',
-  'Consulting',
-  'Tech',
   'Investment Banking',
   'Private Equity',
-  'Real Estate',
-  'Marketing',
-  'Sales',
-  'Healthcare',
+  'Actuarial / Quant',
+  'Consulting',
   'Accounting',
   'Audit',
-  'Operations',
+  'Real Estate',
+  // Product, engineering, data & design
+  'Tech',
+  'Software Engineering',
+  'Product Management',
+  'Project / Program Management',
+  'Data / Analytics',
+  'Design (UX / Product)',
+  'Cybersecurity',
+  // Go-to-market, people & operations
+  'Marketing',
+  'Sales',
+  'Customer Success',
+  'Media / Journalism / PR',
   'Human Resources',
-  'Nonprofit',
+  'Operations',
+  // Public sector, mission & service
   'Government',
+  'Nonprofit',
+  'Law / Legal',
+  'Healthcare',
+  'Nursing',
+  'Social Work / Counseling',
+  'Teaching / Education',
+  'Aviation / Pilot',
+  'Skilled Trades',
+  'Retail / Hospitality',
+  // Founders & academia
+  'Startup / Founder / VC',
+  'Academia / Faculty',
+  // School admissions (swaps Company/Role labels to School/Program)
   'Pre-Med / Health Professional School',
   'Pre-Law / Law School',
+  'Business School / MBA',
   'Graduate School (General)',
   'Coffee Chat',
 ]
@@ -47,6 +76,7 @@ const SCHOOL_VERTICALS = new Set([
   'Pre-Med / Health Professional School',
   'Pre-Law / Law School',
   'Graduate School (General)',
+  'Business School / MBA',
 ])
 
 const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const

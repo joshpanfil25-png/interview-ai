@@ -277,25 +277,56 @@ export async function POST(req: NextRequest) {
         'Calibrate to Hard: assume the candidate is targeting a competitive, senior-track opportunity. Role-specific questions should probe edge cases, require the candidate to quantify trade-offs, and go a layer deeper than a textbook answer — the kind of question that separates a good answer from a great one. Behavioral questions should expect fully realized STAR answers with real stakes, not a surface-level anecdote. The curveball can be more abstract or higher-pressure, while staying fair and never a "gotcha."',
     }
 
-    const orderInstructions = focusOrder[focus].join('\n')
-    const expectedTypes = focusTypeMap[focus]
+    // Some verticals need a non-standard question arc that the behavioral-heavy
+    // default actively fights (a networking coffee chat, a rapid founder pitch).
+    // Override the order outright so the generated set matches the vertical
+    // instead of being forced into a STAR interview. Types stay within
+    // behavioral | role-specific | curveball so the question_type schema is
+    // unaffected — only the question wording changes.
+    const arcOverrides: Record<string, string[]> = {
+      'Coffee Chat': [
+        '1. A warm opener about their career journey or how they got into this field',
+        '2. A question asking what advice they would give someone starting out',
+        '3. A question about a current trend or change in their industry',
+        '4. A question about what their day-to-day work actually looks like',
+        '5. A thoughtful question about a specific choice or turning point in their path',
+        '6. A memorable, genuine question that shows real curiosity — never a gotcha',
+      ],
+      'Startup / Founder / VC': [
+        '1. What are you building, and who is it for? Keep it concrete.',
+        '2. How do you know they actually want it — what real evidence of demand do you have (users, revenue, growth, or specific customer conversations)?',
+        '3. Why you and your team specifically, for this problem?',
+        '4. What have you learned recently that changed your plan?',
+        '5. Founder-market fit, your single biggest real risk, or your unit economics — with real numbers, not pitch-mode hand-waving',
+        '6. A real founder curveball (for example: a well-funded incumbent ships your exact feature next week — what do you do in the next thirty days?)',
+      ],
+    }
+    const arcOverride = arcOverrides[interviewType]
+    const orderInstructions = (arcOverride ?? focusOrder[focus]).join('\n')
+    // Override arcs reuse the Balanced type pattern (4 + role-specific + curveball)
+    // so stored question_type values stay valid.
+    const expectedTypes = arcOverride ? focusTypeMap.Balanced : focusTypeMap[focus]
 
     const antiRepeatInstruction = 'Every question in this set — especially the behavioral ones — must probe a genuinely distinct situation, skill, or competency. Never generate two questions a candidate could answer with the same story (for example, do not ask both a general "walk me through your background" question and a separate "tell me about a relevant experience" question — these overlap). If following the guidance above would naturally produce overlapping angles, adjust the specific wording so each question targets a different moment, skill, or trade-off.'
 
     // Calibrate difficulty/scope to the seniority implied by the role, so an
     // intern and a senior hire in the same field get genuinely different questions.
-    const seniorityInstruction = `Calibrate the depth, stakes, and scope of every question to the seniority implied by the role — "${role}"${resumeText ? ' and the resume below' : ''}. An intern, a new grad, an individual contributor, and a senior or leadership hire should not receive the same questions. If the role implies managing people or leading, include at least one question about leading, influencing, or making decisions for others.`
+    const seniorityInstruction = `Calibrate the depth, stakes, and scope of every question to the seniority implied by the role — "${role}"${resumeText ? ' and the resume below' : ''}. An intern, a new grad, an individual contributor, and a senior or leadership hire should not receive the same questions. If the role implies managing people or leading, include at least one question about leading, influencing, or making decisions for others. For entry-level, student, first-job, or new-grad candidates, keep the role-specific question foundational (not senior-judgment calls the candidate would not yet face) and let the behavioral questions draw on coursework, internships, part-time jobs, volunteering, sports, or school, not just full-time work.`
 
     // A shared realism floor that applies on top of the vertical guidance, to keep
     // questions accurate to a real interview rather than generic or trivia-like.
-    const qualityBar = `Quality bar for every question: it must be realistic for an actual interview for this role at this company and level — the kind a real interviewer would actually ask. Do not ask textbook-definition or trivia questions; ask the candidate to reason, decide, or recount real experience rather than recite a definition. Every question must be answerable from the candidate’s own experience or live reasoning, never requiring insider information they could not have. Any "why this ${isSchoolVertical ? 'school or program' : 'company or role'}" question must demand a specific, examined reason and not settle for generic praise. Keep the curveball relevant to the field and fair — memorable, never a gotcha.`
+    const qualityBar = arcOverride && interviewType === 'Coffee Chat'
+      ? `Quality bar: keep every question warm, open-ended, and genuinely conversational — the tone of a friendly chat over coffee. Do not ask interview-style, evaluative, or metrics-driven questions, do not demand a "why this company" justification, and never a gotcha.`
+      : `Quality bar for every question: it must be realistic for an actual interview for this role at this company and level — the kind a real interviewer would actually ask. Do not ask textbook-definition or trivia questions; ask the candidate to reason, decide, or recount real experience rather than recite a definition. Every question must be answerable from the candidate’s own experience or live reasoning, never requiring insider information they could not have. Any "why this ${isSchoolVertical ? 'school or program' : 'company or role'}" question must demand a specific, examined reason and not settle for generic praise. Keep the curveball relevant to the field and fair — memorable, never a gotcha.`
 
     // Specialize to the actual industry/company, not just the broad vertical —
     // otherwise the vertical guidance imposes the wrong model (e.g. digital-
     // marketing metrics on a sports-marketing role at a pro team).
-    const specializationInstruction = `Specialize the role-specific and curveball questions to the actual industry and business model implied by the company "${company}" and the role "${role}", not just the broad vertical. Identify the dominant real-world levers and metrics for this exact role at this organization and target the role-specific question there — if the vertical's default framing or metrics do not fit the industry (for example, digital-marketing metrics like CAC or ROAS for a sports, entertainment, or nonprofit marketing role), substitute the ones that industry actually uses. Any "why this ${isSchoolVertical ? 'school or program' : 'company or organization'}" angle must reflect something specific and real about ${company}.`
+    const specializationInstruction = `Specialize the role-specific and curveball questions to the actual industry and business model implied by the company "${company}" and the role "${role}", not just the broad vertical. Identify the dominant real-world levers and metrics for this exact role at this organization and target the role-specific question there — if the vertical's default framing or metrics do not fit the industry (for example, digital-marketing metrics like CAC or ROAS for a sports, entertainment, or nonprofit marketing role), substitute the ones that industry actually uses. Any "why this ${isSchoolVertical ? 'school or program' : 'company or organization'}" angle must reflect something specific and real about ${company}. Many verticals bundle several distinct sub-roles; identify the specific one the role "${role}" belongs to and target the role-specific question at it — for example recruiting versus employee-relations for HR, a reporter versus PR for media, insurer-actuarial versus quant-trading for actuarial, or a customer-facing solutions/sales engineer versus pure coding for tech — rather than the vertical's default sub-type.`
 
-    const framingIntro = isSchoolVertical
+    const framingIntro = interviewType === 'Coffee Chat'
+      ? `You are helping someone prepare for an informal networking coffee chat with a professional at ${company} (their role: ${role}). This is a friendly, two-way conversation, NOT a job interview and NOT a candidate being evaluated. Write warm, genuine, open-ended conversation questions that build rapport and show curiosity — never interview-style, evaluative, or "gotcha" questions.`
+      : isSchoolVertical
       ? `You are a warm, encouraging admissions interview coach preparing practice questions for a candidate applying to ${company} for their ${role} program. Your goal is to help this person grow and show their best self, so write questions that are appropriately challenging but always fair — open-ended prompts that give the candidate room to shine, never "gotcha" questions designed to trip them up. Even the curveball should feel like a thoughtful, energizing question, not an ambush.`
       : `You are a warm, encouraging interview coach preparing practice questions for a candidate applying to ${company} for the role of ${role}. Your goal is to help this person grow and show their best self, so write questions that are appropriately challenging but always fair — open-ended prompts that give the candidate room to shine, never "gotcha" questions designed to trip them up. Even the curveball should feel like a thoughtful, energizing question, not an ambush.`
 

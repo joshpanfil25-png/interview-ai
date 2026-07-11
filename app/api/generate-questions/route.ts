@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { getSupabaseClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -133,7 +133,12 @@ export async function POST(req: NextRequest) {
     const isSchoolVertical = SCHOOL_VERTICALS.has(interviewType)
 
     // Create the Supabase client at request time (never at module/build time).
-    const supabase = getSupabaseClient()
+    // Use the cookie-aware SSR client so a signed-in user's session is present:
+    // that lets us stamp the session with their user_id (RLS requires the insert
+    // to run under their auth, i.e. auth.uid() = user_id). Guests have no cookie,
+    // so this behaves like the anon client — user_id stays null, exactly as before.
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
     const verticalGuidance: Record<string, string> = {
       'Finance':
@@ -379,12 +384,15 @@ ${JSON.stringify(questions)}`
       // Keep the original questions on any gate failure — never block generation.
     }
 
-    // Store session in Supabase
+    // Store session in Supabase. Stamp user_id for signed-in users; guests
+    // stay null (unchanged behavior). Derived server-side from the verified
+    // session — never trusted from the client.
     const { error: sessionError } = await supabase.from('sessions').insert({
       id: sessionId,
       company,
       role,
       linkedin_url: linkedinUrl || null,
+      user_id: user?.id ?? null,
     })
 
     if (sessionError) throw new Error(`Supabase session error: ${sessionError.message}`)

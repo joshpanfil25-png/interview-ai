@@ -89,7 +89,7 @@ ${qaPairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).j
 
 For each answer, do two things:
 
-1. Score it 1-10 for: Clarity, Confidence, Structure, and Relevance.
+1. Score it 0-10 for: Clarity, Confidence, Structure, and Relevance. Scoring floor: if an answer is empty, a single stray character, gibberish, or does not genuinely attempt to answer the question, score all four components 0 — do not award points for effort that is not there, regardless of the encouraging tone.
 
 2. Analyze whether the answer uses the STAR method (Situation, Task, Action, Result). For each of the four components, rate it as:
    - "present" — clearly and specifically addressed

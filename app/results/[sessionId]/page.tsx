@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evaluate/route'
 import { supabase } from '@/lib/supabase'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
@@ -1044,7 +1045,10 @@ export default function ResultsPage() {
 
         {/* Footer */}
         <footer className="pb-10 pt-4 text-center">
-          <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+          <p className="text-xs text-gray-700">
+            © 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students&nbsp;&nbsp;·&nbsp;&nbsp;
+            <Link href="/how-it-works" className="hover:text-gray-400 transition-colors">How it works</Link>
+          </p>
         </footer>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { v4 as uuidv4 } from 'uuid'
 import { loadHistory } from '@/lib/history'
 import type { HistoryEntry } from '@/lib/history'
@@ -240,6 +241,15 @@ export default function Home() {
           <p className="text-gray-500 mt-2.5 text-sm leading-relaxed">
             Practice any interview.&nbsp; Get brutal feedback.&nbsp; Actually improve.
           </p>
+          <Link
+            href="/how-it-works"
+            className="inline-flex items-center gap-1 mt-3 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            New here? See how it works
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Link>
         </div>
 
         {/* Form card */}
@@ -769,7 +779,10 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-12 pb-8 text-center">
-        <p className="text-xs text-gray-700">© 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+        <p className="text-xs text-gray-700">
+          © 2026 Interview AI&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students&nbsp;&nbsp;·&nbsp;&nbsp;
+          <Link href="/how-it-works" className="hover:text-gray-400 transition-colors">How it works</Link>
+        </p>
       </footer>
     </main>
   )

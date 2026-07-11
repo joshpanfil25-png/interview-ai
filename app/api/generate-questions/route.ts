@@ -242,6 +242,14 @@ export async function POST(req: NextRequest) {
 
     const antiRepeatInstruction = 'Every question in this set — especially the behavioral ones — must probe a genuinely distinct situation, skill, or competency. Never generate two questions a candidate could answer with the same story (for example, do not ask both a general "walk me through your background" question and a separate "tell me about a relevant experience" question — these overlap). If following the guidance above would naturally produce overlapping angles, adjust the specific wording so each question targets a different moment, skill, or trade-off.'
 
+    // Calibrate difficulty/scope to the seniority implied by the role, so an
+    // intern and a senior hire in the same field get genuinely different questions.
+    const seniorityInstruction = `Calibrate the depth, stakes, and scope of every question to the seniority implied by the role — "${role}"${resumeText ? ' and the resume below' : ''}. An intern, a new grad, an individual contributor, and a senior or leadership hire should not receive the same questions. If the role implies managing people or leading, include at least one question about leading, influencing, or making decisions for others.`
+
+    // A shared realism floor that applies on top of the vertical guidance, to keep
+    // questions accurate to a real interview rather than generic or trivia-like.
+    const qualityBar = `Quality bar for every question: it must be realistic for an actual interview for this role at this company and level — the kind a real interviewer would actually ask. Do not ask textbook-definition or trivia questions; ask the candidate to reason, decide, or recount real experience rather than recite a definition. Every question must be answerable from the candidate’s own experience or live reasoning, never requiring insider information they could not have. Any "why this ${isSchoolVertical ? 'school or program' : 'company or role'}" question must demand a specific, examined reason and not settle for generic praise. Keep the curveball relevant to the field and fair — memorable, never a gotcha.`
+
     const framingIntro = isSchoolVertical
       ? `You are a warm, encouraging admissions interview coach preparing practice questions for a candidate applying to ${company} for their ${role} program. Your goal is to help this person grow and show their best self, so write questions that are appropriately challenging but always fair — open-ended prompts that give the candidate room to shine, never "gotcha" questions designed to trip them up. Even the curveball should feel like a thoughtful, energizing question, not an ambush.`
       : `You are a warm, encouraging interview coach preparing practice questions for a candidate applying to ${company} for the role of ${role}. Your goal is to help this person grow and show their best self, so write questions that are appropriately challenging but always fair — open-ended prompts that give the candidate room to shine, never "gotcha" questions designed to trip them up. Even the curveball should feel like a thoughtful, energizing question, not an ambush.`
@@ -255,7 +263,11 @@ ${difficultyGuidance[level]}
 
 ${antiRepeatInstruction}
 
-${resumeText ? `Here is the candidate's resume:\n${resumeText}\n` : ''}
+${seniorityInstruction}
+
+${qualityBar}
+
+${resumeText ? `Here is the candidate’s resume — ground at least two of the six questions in specific, concrete details from it (a named project, a listed skill or tool, a past role, or a visible gap), referencing the detail so the question feels written for this person while staying fair and answerable:\n${resumeText}\n` : ''}
 ${linkedinUrl ? `Candidate's LinkedIn: ${linkedinUrl}\n` : ''}
 
 Generate exactly 6 interview questions tailored to the ${interviewType} vertical in the following order:

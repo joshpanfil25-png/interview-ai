@@ -91,6 +91,13 @@ For each answer, do two things:
 
 1. Score it 0-10 for: Clarity, Confidence, Structure, and Relevance. Scoring floor: if an answer is empty, a single stray character, gibberish, or does not genuinely attempt to answer the question, score all four components 0 — do not award points for effort that is not there, regardless of the encouraging tone.
 
+   Score each dimension against this rubric, not a gut feeling:
+   - Clarity — is the point easy to follow and does the answer lead with it, or is it buried, rambling, or hard to parse?
+   - Confidence — does the language read as decisive and grounded (owns "I", commits to a position), or hedged, vague, and uncertain?
+   - Structure — does the answer follow a recognizable shape (STAR for behavioral, a clear framework or logical progression for technical/case), or does it wander?
+   - Relevance — does it actually answer the question asked with concrete substance (specific numbers, names, mechanisms, examples), or is it generic filler or off-topic?
+   Calibrate the number to the evidence: 8-10 = strong (specific, well-structured, directly on-point); 5-7 = solid but with real gaps; 2-4 = weak, vague, or only partially responsive; 0-1 = essentially no genuine attempt. Do not cluster every answer in the 6-8 band — spread scores to reflect real differences.
+
 2. Analyze whether the answer uses the STAR method (Situation, Task, Action, Result). For each of the four components, rate it as:
    - "present" — clearly and specifically addressed
    - "weak" — hinted at or vague but not fully developed

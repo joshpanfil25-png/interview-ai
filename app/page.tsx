@@ -843,7 +843,12 @@ export default function Home() {
                 Generating Interview...
               </>
             ) : (
-              'Run it back ◀◀'
+              <span className="inline-flex items-center gap-1.5">
+                Run it back
+                {/* Rewind mark reuses LogoMark (fill: currentColor) so it inherits
+                    the button's text color instead of rendering as a blue emoji. */}
+                <LogoMark className="w-3.5 h-3.5" />
+              </span>
             )}
           </button>
         </form>

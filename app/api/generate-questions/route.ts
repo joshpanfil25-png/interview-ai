@@ -4,6 +4,10 @@ import { getSupabaseClient } from '@/lib/supabase'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Two model calls now run per request (generate + quality-gate), so give the
+// function headroom beyond the platform default to avoid edge-case timeouts.
+export const maxDuration = 60
+
 // Verticals that are school admissions interviews, not job interviews.
 // "company" is read as the target school; "role" is read as the program/degree.
 const SCHOOL_VERTICALS = new Set([
@@ -300,6 +304,50 @@ ${expectedTypes.map((t) => `  {"type": "${t}", "question": "..."}`).join(',\n')}
 
     if (!Array.isArray(questions) || questions.length !== 6) {
       throw new Error('Invalid question format returned')
+    }
+
+    // Quality gate: a fast second pass that catches questions which are
+    // duplicative, off-level, or unanswerable/trivia and rewrites only those,
+    // preserving each question's type and position. Best-effort — any failure
+    // (parse, timeout, shape mismatch) falls back to the original generated set.
+    try {
+      const critiquePrompt = `You are a strict interview-question editor. Below are 6 practice interview questions generated for a candidate applying to ${company} for ${isSchoolVertical ? `the ${role} program` : `the role of ${role}`} (vertical: ${interviewType}, difficulty: ${level}).
+
+Review each question against three tests:
+1. Distinct — no two questions can be answered with the same story or example.
+2. Level-appropriate — calibrated to the seniority implied by "${role}", neither too basic nor too advanced.
+3. Realistic and answerable — the kind of question a real interviewer would ask, answerable from the candidate's own experience or live reasoning, never a trivia/definition question or one that requires insider information.
+
+Keep every question that passes all three tests exactly as written. Rewrite only the ones that fail, keeping the same "type" value and the same position in the list. Return ONLY a valid JSON array of exactly 6 objects, in the original order and with the original "type" values:
+${JSON.stringify(questions)}`
+
+      const critique = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1536,
+        messages: [{ role: 'user', content: critiquePrompt }],
+      })
+      const critiqueBlock = critique.content.find((b) => b.type === 'text')
+      if (critiqueBlock && critiqueBlock.type === 'text') {
+        const match = critiqueBlock.text.match(/\[[\s\S]*\]/)
+        if (match) {
+          const revised = JSON.parse(match[0]) as Array<{ type: string; question: string }>
+          const validTypes = new Set(['behavioral', 'role-specific', 'curveball'])
+          const isClean =
+            Array.isArray(revised) &&
+            revised.length === 6 &&
+            revised.every(
+              (q, i) =>
+                q &&
+                typeof q.question === 'string' &&
+                q.question.trim().length > 0 &&
+                q.type === questions[i].type &&
+                validTypes.has(q.type)
+            )
+          if (isClean) questions = revised
+        }
+      }
+    } catch {
+      // Keep the original questions on any gate failure — never block generation.
     }
 
     // Store session in Supabase

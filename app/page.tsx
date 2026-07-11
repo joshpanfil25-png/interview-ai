@@ -54,6 +54,7 @@ const INTERVIEW_TYPES = [
   'Law / Legal',
   'Healthcare',
   'Nursing',
+  'Medical Residency / Fellowship',
   'Social Work / Counseling',
   'Teaching / Education',
   'Aviation / Pilot',

@@ -63,6 +63,12 @@ const INTERVIEW_TYPES = [
   'Aviation / Pilot',
   'Skilled Trades',
   'Retail / Hospitality',
+  'Hospitality & Culinary Management',
+  'Criminal Justice / Law Enforcement',
+  // Arts, environment & the built world
+  'Architecture / Urban Planning',
+  'Fine & Performing Arts',
+  'Environmental & Sustainability',
   // Founders & academia
   'Startup / Founder / VC',
   'Academia / Faculty',

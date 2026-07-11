@@ -64,6 +64,7 @@ const INTERVIEW_TYPES = [
   'Academia / Faculty',
   // School admissions (swaps Company/Role labels to School/Program)
   'Pre-Med / Health Professional School',
+  'Pharmacy / Dental / Vet / PT School',
   'Pre-Law / Law School',
   'Business School / MBA',
   'Graduate School (General)',
@@ -78,6 +79,7 @@ const SCHOOL_VERTICALS = new Set([
   'Pre-Law / Law School',
   'Graduate School (General)',
   'Business School / MBA',
+  'Pharmacy / Dental / Vet / PT School',
 ])
 
 const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const

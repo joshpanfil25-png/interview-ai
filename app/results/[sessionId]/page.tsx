@@ -6,6 +6,7 @@ import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evalu
 import { supabase } from '@/lib/supabase'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
 import { saveHistoryEntry } from '@/lib/history'
+import { ResultsAuthNudge } from '@/components/auth/ResultsAuthNudge'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -1024,6 +1025,10 @@ export default function ResultsPage() {
           </div>
         )}
         </div>
+
+        {/* Optional save-your-progress nudge — guests only, shown after the
+            score + feedback. Never gates; results render fully regardless. */}
+        <ResultsAuthNudge />
 
         {/* Share Your Feedback */}
         <div>

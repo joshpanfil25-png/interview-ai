@@ -7,6 +7,7 @@ import { loadHistory } from '@/lib/history'
 import type { HistoryEntry } from '@/lib/history'
 import type { ResumeGrade } from '@/app/api/grade-resume/route'
 import type { ResumeRewriteGuide } from '@/app/api/rewrite-resume/route'
+import { NavAuth } from '@/components/auth/NavAuth'
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -386,7 +387,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <a href="#how-it-works" className="hidden sm:inline text-sm text-ink-muted hover:text-cream transition-colors">How it works</a>
-            <button type="button" className="border border-line-hover rounded-lg px-4 py-2 text-sm text-cream hover:border-brand transition-colors">Log in</button>
+            <NavAuth />
           </div>
         </nav>
 

@@ -52,6 +52,16 @@ const SCHOOL_VERTICALS = new Set([
 const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const
 const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'] as const
 
+// Minimum number of extracted characters we treat as a usable resume. Below
+// this we assume extraction failed (e.g. a scanned / image-only PDF with no
+// text layer, or stray page-number noise) rather than a real resume.
+// Tunable — revisit against real user data if we see false positives/negatives.
+const MIN_RESUME_CHARS = 40
+
+function hasUsableText(text: string): boolean {
+  return text.trim().length >= MIN_RESUME_CHARS
+}
+
 export default function Home() {
   const router = useRouter()
   const [interviewType, setInterviewType] = useState('General')
@@ -65,6 +75,9 @@ export default function Home() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [resumeText, setResumeText] = useState('')
   const [fileName, setFileName] = useState('')
+  // Resume parse feedback, kept separate from the form-validation `error` line.
+  const [resumeNotice, setResumeNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [showManualPaste, setShowManualPaste] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -113,25 +126,74 @@ export default function Home() {
 
   const handleFile = async (file: File) => {
     if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file.')
+      setResumeNotice({ type: 'error', msg: 'That file isn’t a PDF. Upload a PDF resume, or paste your resume text instead.' })
+      setShowManualPaste(true)
       return
     }
-    setFileName(file.name)
-    setError('')
-    // Reset analysis state when a new file is loaded
+    // Clear prior resume + analysis state before parsing the new file so no
+    // stale success/checkmark survives a failed parse.
+    setResumeText('')
+    setFileName('')
+    setResumeNotice(null)
+    resetAnalysisState()
+    try {
+      const text = await extractTextFromPdf(file)
+      if (!hasUsableText(text)) {
+        // pdfjs succeeded but found no usable text — almost always a scanned /
+        // image-based PDF with no text layer. Do NOT store the junk, and do NOT
+        // show a success checkmark.
+        setResumeNotice({
+          type: 'error',
+          msg: 'We couldn’t read any text from this PDF — it looks scanned or image-based. Paste your resume text below instead.',
+        })
+        setShowManualPaste(true)
+        return
+      }
+      setFileName(file.name)
+      setResumeText(text)
+      setResumeNotice({ type: 'success', msg: 'Resume loaded — we’ll tailor your questions to it.' })
+    } catch (err) {
+      console.error('PDF extraction error:', err)
+      setResumeNotice({
+        type: 'error',
+        msg: 'We couldn’t read this PDF — it may be corrupted or password-protected. Paste your resume text below instead.',
+      })
+      setShowManualPaste(true)
+    }
+  }
+
+  // Reset resume-analysis (grade + rewrite) state whenever the resume changes.
+  const resetAnalysisState = () => {
     setResumeGrade(null)
     setGradeOpen(false)
     setGradeError('')
     setRewriteGuide(null)
     setRewriteOpen(false)
     setRewriteError('')
-    try {
-      const text = await extractTextFromPdf(file)
-      setResumeText(text)
-    } catch (err) {
-      console.error('PDF extraction error:', err)
-      setError('Failed to extract text from PDF. Please try another file.')
+  }
+
+  // Manual paste — converges on the same resumeText + usable-text check as PDF.
+  const handleManualResumeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value
+    setResumeText(text)
+    setFileName('') // typed text supersedes any uploaded file
+    resetAnalysisState()
+    if (hasUsableText(text)) {
+      setResumeNotice({ type: 'success', msg: 'Resume text added — we’ll tailor your questions to it.' })
+    } else {
+      // Don't nag mid-type; the submit guard enforces usability on submit.
+      setResumeNotice(null)
     }
+  }
+
+  // Clear resume entirely — lets the user proceed with no resume after a failed parse.
+  const clearResume = () => {
+    setResumeText('')
+    setFileName('')
+    setResumeNotice(null)
+    setShowManualPaste(false)
+    resetAnalysisState()
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleGradeResume = async () => {
@@ -210,6 +272,16 @@ export default function Home() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address.')
+      return
+    }
+
+    // A resume is optional, but if the user attempted to provide one (failed
+    // parse still showing, or unusable pasted text) don't silently send empty
+    // context to question generation — make them fix it or clear it.
+    const resumeAttempted = resumeNotice?.type === 'error' || resumeText.trim().length > 0
+    if (resumeAttempted && !hasUsableText(resumeText)) {
+      setError('We couldn’t read your resume. Paste your resume text, or clear it to continue without one.')
+      setShowManualPaste(true)
       return
     }
 
@@ -496,8 +568,52 @@ export default function Home() {
               )}
             </div>
 
-            {/* Resume tools — appear once a file is loaded */}
-            {resumeText && (
+            {/* Resume parse notice — distinct from the form-validation error line */}
+            {resumeNotice && (
+              <div
+                className={`flex items-start gap-3 rounded-md px-3 py-2.5 text-xs ${
+                  resumeNotice.type === 'error'
+                    ? 'bg-red-500/[0.08] border border-red-500/20 text-red-300'
+                    : 'bg-emerald-500/[0.08] border border-emerald-500/20 text-emerald-300'
+                }`}
+              >
+                <span className="leading-relaxed flex-1">{resumeNotice.msg}</span>
+                {resumeNotice.type === 'error' && (
+                  <button
+                    type="button"
+                    onClick={clearResume}
+                    className="shrink-0 underline decoration-red-400/40 hover:decoration-red-300 text-red-300/80 hover:text-red-200 transition-colors"
+                  >
+                    Continue without
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Manual paste fallback — always available via toggle, auto-revealed on parse failure */}
+            {!showManualPaste ? (
+              <button
+                type="button"
+                onClick={() => setShowManualPaste(true)}
+                className="self-start text-xs text-gray-500 hover:text-brand underline decoration-gray-600 hover:decoration-brand transition-colors"
+              >
+                Or paste it manually instead
+              </button>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-gray-500">Paste your resume text</label>
+                <textarea
+                  value={fileName ? '' : resumeText}
+                  onChange={handleManualResumeChange}
+                  rows={6}
+                  placeholder="Paste the full text of your resume here…"
+                  className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors resize-y"
+                />
+              </div>
+            )}
+
+            {/* Resume tools — appear only once we have usable resume text */}
+            {hasUsableText(resumeText) && (
               <div className="border border-white/[0.08] rounded-lg overflow-hidden divide-y divide-white/[0.06]">
 
                 {/* ── Grade panel ─────────────────────────────── */}

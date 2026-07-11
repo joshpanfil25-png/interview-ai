@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { countFillers, rankFillers } from '@/lib/fillerWords'
 
 function LogoMark({ className }: { className?: string }) {
@@ -60,6 +60,12 @@ export default function InterviewPage() {
   // ── Load questions from Supabase ────────────────────────────
   useEffect(() => {
     async function loadQuestions() {
+      const supabase = getSupabaseBrowserClient()
+      // Ensure the auth session is hydrated before querying so a logged-in
+      // user's JWT is attached (auth.uid() = user_id). Guests have no session,
+      // so this is a no-op and reads run as anon → null-user_id rows visible.
+      await supabase.auth.getSession()
+
       const { data, error } = await supabase
         .from('questions')
         .select('*')
@@ -165,7 +171,11 @@ export default function InterviewPage() {
 
     const currentQuestion = questions[currentIndex]
 
-    // Upsert answer (overwrites any previous attempt for this question)
+    // Upsert answer (overwrites any previous attempt for this question). Uses
+    // the auth-aware browser client so a logged-in user's write passes RLS
+    // (parent session owned by auth.uid()); guests write as anon to their
+    // null-owned session, unchanged.
+    const supabase = getSupabaseBrowserClient()
     const { error: saveError } = await supabase.from('answers').upsert(
       { session_id: sessionId, question_id: currentQuestion.id, answer_text: transcript.trim() },
       { onConflict: 'session_id,question_id' }

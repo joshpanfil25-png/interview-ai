@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evaluate/route'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
 import { saveHistoryEntry } from '@/lib/history'
 import { ResultsAuthNudge } from '@/components/auth/ResultsAuthNudge'
@@ -59,12 +59,20 @@ export default function ResultsPage() {
   }, [sessionId])
 
   useEffect(() => {
-    supabase
-      .from('sessions')
-      .select('company, role')
-      .eq('id', sessionId)
-      .single()
-      .then(({ data }) => { if (data) setSessionData(data) })
+    async function loadSession() {
+      const supabase = getSupabaseBrowserClient()
+      // Hydrate the auth session first so a logged-in user's JWT is attached
+      // (auth.uid() = user_id). Guests have no session → anon read of their
+      // null-owned session, unchanged.
+      await supabase.auth.getSession()
+      const { data } = await supabase
+        .from('sessions')
+        .select('company, role')
+        .eq('id', sessionId)
+        .single()
+      if (data) setSessionData(data)
+    }
+    loadSession()
   }, [sessionId])
 
   // Save to localStorage history once evaluation + session data are both ready

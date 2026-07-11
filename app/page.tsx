@@ -449,7 +449,7 @@ export default function Home() {
             <span className="font-display text-[22px] font-black text-cream">runback</span>
           </div>
           <div className="flex items-center gap-3">
-            <a href="#how-it-works" className="hidden sm:inline text-sm text-ink-muted hover:text-cream transition-colors">How it works</a>
+            <a href="/how-it-works" className="hidden sm:inline text-sm text-ink-muted hover:text-cream transition-colors">How it works</a>
             <NavAuth />
           </div>
         </nav>

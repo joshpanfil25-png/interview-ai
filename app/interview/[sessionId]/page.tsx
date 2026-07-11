@@ -188,6 +188,17 @@ export default function InterviewPage() {
     }
 
     setIsSaving(false)
+
+    // On the final question, skip the per-question feedback step and go straight
+    // to the full results page. The answer is already saved above, and full
+    // scoring runs on the results page — the instant single-answer feedback
+    // (shown on questions 1..N-1) adds nothing on the last question and was what
+    // forced the user to press "Finish & Get Results" a second time.
+    if (currentIndex === questions.length - 1) {
+      advanceQuestion()
+      return
+    }
+
     setIsEvaluating(true)
 
     try {
@@ -430,11 +441,11 @@ export default function InterviewPage() {
                     onClick={advanceQuestion}
                     className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-blacktop font-semibold px-4 py-2 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
                   >
-                    {currentIndex < questions.length - 1 ? (
-                      <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
-                    ) : (
-                      'Finish & Get Results'
-                    )}
+                    {/* The feedback panel only renders on questions 1..N-1 (the
+                        last question skips instant feedback and goes straight to
+                        results), so this button is always "Next Question". */}
+                    Next Question
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               </div>

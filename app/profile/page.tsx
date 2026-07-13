@@ -1,19 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useUser } from '@/lib/useUser'
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { NavAuth } from '@/components/auth/NavAuth'
-
-function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
-      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
-    </svg>
-  )
-}
+import { Glass, GlassWordmark, RunbackLogoChip } from '@/app/components/teal-glass'
 
 type SessionRow = {
   id: string
@@ -105,16 +98,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col animate-fade-in">
+    <div className="min-h-screen flex flex-col animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6]">
       {/* Header */}
-      <header className="border-b border-line">
-        <nav className="max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-5">
-          <a href="/" className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-brand shadow-[0_0_24px_rgba(255,90,31,0.45)]">
-              <LogoMark className="w-5 h-5 text-blacktop" />
-            </div>
-            <span className="font-display text-[22px] font-black text-cream">runback</span>
-          </a>
+      <header className="relative z-2">
+        <nav className="max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-3.5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <Link href="/" className="flex items-center gap-2.5">
+            <RunbackLogoChip size={32} />
+            <GlassWordmark className="text-lg" />
+          </Link>
           <NavAuth />
         </nav>
       </header>
@@ -122,8 +113,8 @@ export default function ProfilePage() {
       <main className="flex-1 max-w-[1000px] mx-auto w-full px-6 py-10">
         {/* ===== Your Interviews ===== */}
         <section>
-          <h1 className="font-display font-black text-3xl text-cream tracking-tight">Your Profile</h1>
-          <p className="text-sm text-ink-muted mt-1">Every rep you&apos;ve logged, most recent first.</p>
+          <h1 className="font-serif font-bold text-3xl text-ink tracking-tight">Your Profile</h1>
+          <p className="text-sm text-ink/60 mt-1">Every rep you&apos;ve logged, most recent first.</p>
 
           <div className="mt-8">
             {isLoading ? (
@@ -132,32 +123,31 @@ export default function ProfilePage() {
               </div>
             ) : !user ? (
               // Guest — sign-in prompt (no hard block, no forced redirect)
-              <div className="relative bg-surface border border-line rounded-2xl p-8 overflow-hidden max-w-xl">
-                <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
-                <p className="font-display font-black text-lg text-cream tracking-tight">Sign in to see your history</p>
-                <p className="text-sm text-ink-muted mt-1.5 leading-relaxed">
+              <Glass className="rounded-[20px] p-8 max-w-xl">
+                <p className="font-serif font-bold text-lg text-ink tracking-tight">Sign in to see your history</p>
+                <p className="text-sm text-ink/60 mt-1.5 leading-relaxed">
                   Your past mocks and scores live in your account. Sign in to pick up where you left off.
                 </p>
                 <div className="mt-5">
                   <GoogleSignInButton label="Continue with Google" next="/profile" />
                 </div>
-              </div>
+              </Glass>
             ) : loadError ? (
-              <div className="bg-surface border border-line rounded-2xl p-6 max-w-xl">
-                <p className="text-sm text-red-400">{loadError}</p>
-              </div>
+              <Glass className="rounded-[20px] p-6 max-w-xl">
+                <p className="text-sm text-red-600">{loadError}</p>
+              </Glass>
             ) : sessions && sessions.length === 0 ? (
               // Empty state
-              <div className="bg-surface border border-line rounded-2xl p-10 text-center max-w-xl">
-                <p className="font-display font-black text-xl text-cream tracking-tight">No mocks yet — run your first rep</p>
-                <p className="text-sm text-ink-muted mt-1.5">Your interviews will show up here once you finish one.</p>
-                <a
-                  href="/"
-                  className="inline-flex items-center gap-2 mt-6 bg-brand hover:bg-brand-hover text-blacktop font-semibold px-4 py-2 rounded-md text-sm transition-colors"
+              <Glass className="rounded-[20px] p-10 text-center max-w-xl">
+                <p className="font-serif font-bold text-xl text-ink tracking-tight">No mocks yet — run your first rep</p>
+                <p className="text-sm text-ink/60 mt-1.5">Your interviews will show up here once you finish one.</p>
+                <Link
+                  href="/get-started"
+                  className="inline-flex items-center gap-2 mt-6 bg-brand hover:bg-brand-hover text-white font-semibold px-4 py-2 rounded-md text-sm shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all"
                 >
                   Start a mock
-                </a>
-              </div>
+                </Link>
+              </Glass>
             ) : (
               // List
               <ul className="flex flex-col gap-3">
@@ -165,33 +155,33 @@ export default function ProfilePage() {
                   const score = s.score == null ? null : Number(s.score)
                   return (
                     <li key={s.id}>
-                      <a
+                      <Link
                         href={`/results/${s.id}`}
-                        className="group flex items-center gap-4 bg-surface border border-line hover:border-brand rounded-xl px-5 py-4 transition-colors"
+                        className="group flex items-center gap-4 rounded-xl px-5 py-4 transition-colors bg-[rgba(255,255,255,0.5)] backdrop-blur-[26px] border border-[rgba(255,255,255,0.85)] hover:border-brand shadow-[0_16px_40px_rgba(31,37,43,0.07)]"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-cream font-semibold truncate">
-                            {s.company} <span className="text-ink-muted font-normal">· {s.role}</span>
+                          <p className="text-ink font-semibold truncate">
+                            {s.company} <span className="text-ink/60 font-normal">· {s.role}</span>
                           </p>
-                          <p className="text-xs text-ink-muted mt-0.5">{formatDate(s.created_at)}</p>
+                          <p className="text-xs text-ink/50 mt-0.5">{formatDate(s.created_at)}</p>
                         </div>
                         <div className="shrink-0 text-right">
                           {score != null && Number.isFinite(score) ? (
-                            <span className="font-display font-black text-2xl text-volt tabular-nums">
+                            <span className="font-serif font-bold text-2xl text-brand tabular-nums">
                               {score}
-                              <span className="text-sm text-ink-muted font-medium">/10</span>
+                              <span className="text-sm text-ink/50 font-sans font-medium">/10</span>
                             </span>
                           ) : (
-                            <span className="text-sm text-ink-muted">—</span>
+                            <span className="text-sm text-ink/50">—</span>
                           )}
                         </div>
                         <svg
-                          className="shrink-0 w-4 h-4 text-ink-muted group-hover:text-brand transition-colors"
+                          className="shrink-0 w-4 h-4 text-ink/40 group-hover:text-brand transition-colors"
                           fill="none" viewBox="0 0 24 24" stroke="currentColor"
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
-                      </a>
+                      </Link>
                     </li>
                   )
                 })}
@@ -203,18 +193,18 @@ export default function ProfilePage() {
         {/* ===== Saved Resume (Phase 4) ===== */}
         {user && !authLoading && (
           <section className="mt-12">
-            <h2 className="font-display font-black text-xl text-cream tracking-tight">Saved Resume</h2>
-            <p className="text-sm text-ink-muted mt-1">Auto-filled into new mocks so you don&apos;t re-upload each time.</p>
-            <div className="mt-5 bg-surface border border-line rounded-2xl p-6 max-w-2xl">
+            <h2 className="font-serif font-bold text-xl text-ink tracking-tight">Saved Resume</h2>
+            <p className="text-sm text-ink/60 mt-1">Auto-filled into new mocks so you don&apos;t re-upload each time.</p>
+            <Glass className="mt-5 rounded-[20px] p-6 max-w-2xl">
               {savedResume && savedResume.trim().length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2 text-emerald-300">
+                  <div className="flex items-center gap-2 text-emerald-700">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-sm font-medium">Resume saved</span>
                   </div>
-                  <p className="text-xs text-ink-muted leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-ink/60 leading-relaxed whitespace-pre-wrap">
                     {savedResume.slice(0, 200).trim()}{savedResume.length > 200 ? '…' : ''}
                   </p>
                   <div>
@@ -222,18 +212,18 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleClearSavedResume}
                       disabled={clearingResume}
-                      className="text-sm text-ink-muted hover:text-red-300 underline decoration-white/20 hover:decoration-red-400/50 transition-colors disabled:opacity-50"
+                      className="text-sm text-ink/60 hover:text-red-700 underline decoration-ink/20 hover:decoration-red-500/50 transition-colors disabled:opacity-50"
                     >
                       {clearingResume ? 'Clearing…' : 'Clear saved resume'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-ink-muted">
+                <p className="text-sm text-ink/60">
                   No saved resume yet — upload one during your next mock and it&apos;ll be saved here automatically.
                 </p>
               )}
-            </div>
+            </Glass>
           </section>
         )}
       </main>

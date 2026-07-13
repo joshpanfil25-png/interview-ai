@@ -18,7 +18,7 @@ export function ResultsAuthNudge() {
 
   return (
     <div className="relative bg-surface border border-line rounded-2xl p-6 overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
           <p className="font-display font-black text-lg text-cream tracking-tight">

@@ -41,34 +41,34 @@ export function NavAuth() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 border border-line-hover rounded-lg pl-1.5 pr-2.5 py-1.5 text-sm text-cream hover:border-brand transition-colors"
+        className="flex items-center gap-2 border border-[rgba(31,37,43,0.14)] rounded-lg pl-1.5 pr-2.5 py-1.5 text-sm text-ink hover:border-brand transition-colors"
       >
-        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-blacktop text-xs font-bold">
+        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand text-white text-xs font-bold">
           {initial}
         </span>
         <span className="max-w-[120px] truncate">{first}</span>
-        <svg className={`w-3.5 h-3.5 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className={`w-3.5 h-3.5 text-ink/60 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-lg border border-line bg-surface shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-20">
-          <div className="px-4 py-3 border-b border-line">
-            <p className="text-xs text-ink-muted">Signed in as</p>
-            <p className="text-sm text-cream truncate">{user.email}</p>
+        <div className="absolute right-0 mt-2 w-56 rounded-lg border border-[rgba(31,37,43,0.1)] bg-[rgba(255,255,255,0.9)] backdrop-blur-[16px] shadow-[0_20px_50px_rgba(31,37,43,0.15)] overflow-hidden z-20">
+          <div className="px-4 py-3 border-b border-[rgba(31,37,43,0.08)]">
+            <p className="text-xs text-ink/60">Signed in as</p>
+            <p className="text-sm text-ink truncate">{user.email}</p>
           </div>
           <a
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-sm text-cream hover:bg-white/[0.04] transition-colors"
+            className="block px-4 py-2.5 text-sm text-ink hover:bg-[rgba(31,37,43,0.04)] transition-colors"
           >
             Profile
           </a>
           <button
             type="button"
             onClick={() => { setOpen(false); signOut() }}
-            className="w-full text-left px-4 py-2.5 text-sm text-cream hover:bg-white/[0.04] transition-colors border-t border-line"
+            className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-[rgba(31,37,43,0.04)] transition-colors border-t border-[rgba(31,37,43,0.08)]"
           >
             Sign out
           </button>

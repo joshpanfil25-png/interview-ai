@@ -6,16 +6,8 @@ import type { EvaluationResult, StarRating, StarAnalysis } from '@/app/api/evalu
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { countFillersPerAnswer, rankFillers, fluencyScore, wordCount } from '@/lib/fillerWords'
 import { saveHistoryEntry } from '@/lib/history'
+import { GlassWordmark, RunbackLogoChip } from '@/app/components/teal-glass'
 import { ResultsAuthNudge } from '@/components/auth/ResultsAuthNudge'
-
-function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
-      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
-    </svg>
-  )
-}
 
 export default function ResultsPage() {
   const router = useRouter()
@@ -169,9 +161,9 @@ export default function ResultsPage() {
   }, [result, sessionData, sessionId])
 
   const starRatingStyle = (rating: StarRating) => {
-    if (rating === 'present') return { bg: 'bg-green-500/15', text: 'text-green-400', border: 'border-green-500/30', dot: 'bg-green-400' }
-    if (rating === 'weak')    return { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30', dot: 'bg-yellow-400' }
-    return                           { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/25',    dot: 'bg-red-400' }
+    if (rating === 'present') return { bg: 'bg-green-500/10', text: 'text-green-700', border: 'border-green-500/25', dot: 'bg-green-600' }
+    if (rating === 'weak')    return { bg: 'bg-yellow-500/10', text: 'text-yellow-700', border: 'border-yellow-500/25', dot: 'bg-yellow-600' }
+    return                           { bg: 'bg-red-500/10',    text: 'text-red-700',    border: 'border-red-500/25',    dot: 'bg-red-600' }
   }
 
   const starRatingLabel = (rating: StarRating) => {
@@ -181,9 +173,9 @@ export default function ResultsPage() {
   }
 
   const scoreColor = (score: number) => {
-    if (score >= 8) return 'text-green-400'
-    if (score >= 6) return 'text-yellow-400'
-    return 'text-red-400'
+    if (score >= 8) return 'text-green-600'
+    if (score >= 6) return 'text-yellow-600'
+    return 'text-red-600'
   }
 
   // Flat solid fills — no gradients
@@ -531,11 +523,11 @@ export default function ResultsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-[#F1F4F6]">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white font-medium mb-1">Evaluating your interview...</p>
-          <p className="text-ink-muted text-sm">Runback is reviewing your answers</p>
+          <p className="text-ink font-medium mb-1">Evaluating your interview...</p>
+          <p className="text-ink/60 text-sm">Runback is reviewing your answers</p>
         </div>
       </div>
     )
@@ -543,9 +535,9 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-white to-[#F1F4F6]">
         <div className="text-center max-w-md">
-          <p className="text-red-400 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
             className="bg-brand-hover hover:bg-brand text-white text-sm px-5 py-2 rounded-md font-medium transition-colors"
@@ -562,57 +554,55 @@ export default function ResultsPage() {
   const { grade, label } = overallGrade(result.overallScore)
 
   return (
-    <div className="min-h-screen animate-fade-in">
+    <div className="min-h-screen animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6]">
       {/* Header */}
-      <div className="bg-surface-inset border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div className="bg-[rgba(255,255,255,0.6)] backdrop-blur-[12px] border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
-            <LogoMark className="w-4 h-4 text-blacktop" />
-          </div>
-          <span className="font-display font-semibold text-cream text-sm">runback</span>
+          <RunbackLogoChip size={28} />
+          <GlassWordmark className="text-sm" />
         </div>
-        <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide">● RESULTS</span>
+        <span className="text-brand bg-brand/10 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide">● RESULTS</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Auto-email status banner */}
         {autoEmailStatus === 'sent' && (
           <div className="flex items-center gap-2.5 bg-green-500/[0.06] border border-green-500/20 rounded-md px-4 py-2.5">
-            <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-green-300">Results sent to your email.</p>
+            <p className="text-sm text-green-700">Results sent to your email.</p>
           </div>
         )}
 
         {/* Blind Spot Callout */}
         {result.blindSpot?.name && (
-          <div className="rounded-2xl border border-line border-l-2 border-l-brand bg-surface px-6 py-5 flex flex-col gap-1.5">
+          <div className="rounded-2xl border border-line border-l-2 border-l-brand bg-surface px-6 py-5 flex flex-col gap-1.5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
             <p className="text-xs font-semibold text-brand uppercase tracking-widest">Your Blind Spot</p>
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-lg font-semibold text-cream tracking-tight">{result.blindSpot.name}</span>
-              <span className="text-ink-muted text-sm">—</span>
-              <span className="text-gray-400 text-sm leading-relaxed">{result.blindSpot.description}</span>
+              <span className="text-lg font-semibold text-ink tracking-tight">{result.blindSpot.name}</span>
+              <span className="text-ink/50 text-sm">—</span>
+              <span className="text-ink/70 text-sm leading-relaxed">{result.blindSpot.description}</span>
             </div>
           </div>
         )}
 
         {/* Overall Score */}
-        <div className="relative bg-surface border border-line rounded-2xl p-8 text-center overflow-hidden">
+        <div className="relative bg-surface border border-line rounded-2xl p-8 text-center overflow-hidden shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
           {/* Top accent bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
-          <p className="text-ink-muted text-xs font-medium uppercase tracking-widest mb-6">Overall Score</p>
+          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
+          <p className="text-ink/60 text-xs font-medium uppercase tracking-widest mb-6">Overall Score</p>
           <div className="flex items-center justify-center mb-5">
             {(() => {
               const r = 72
               const circ = 2 * Math.PI * r
               const pct = result.overallScore / 10
               const dash = `${(pct * circ).toFixed(1)} ${((1 - pct) * circ).toFixed(1)}`
-              const hexColor = result.overallScore >= 8 ? '#4ade80' : result.overallScore >= 6 ? '#facc15' : '#f87171'
+              const hexColor = result.overallScore >= 8 ? '#16a34a' : result.overallScore >= 6 ? '#ca8a04' : '#dc2626'
               return (
                 <div className="relative inline-flex items-center justify-center w-48 h-48">
                   <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 160 160">
-                    <circle cx="80" cy="80" r={r} fill="none" stroke="#1f2937" strokeWidth="9" />
+                    <circle cx="80" cy="80" r={r} fill="none" stroke="rgba(31,37,43,0.08)" strokeWidth="9" />
                     <circle
                       cx="80" cy="80" r={r}
                       fill="none" stroke={hexColor} strokeWidth="9"
@@ -620,18 +610,18 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="flex flex-col items-center gap-0.5">
-                    <span className={`font-display font-black text-6xl tabular-nums ${scoreColor(result.overallScore)}`}>
+                    <span className={`font-serif font-bold text-6xl tabular-nums ${scoreColor(result.overallScore)}`}>
                       {result.overallScore}
                     </span>
-                    <span className="text-ink-muted text-sm">/10</span>
+                    <span className="text-ink/60 text-sm">/10</span>
                   </div>
                 </div>
               )
             })()}
           </div>
-          <div className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-md px-3 py-1.5">
-            <span className="text-cream font-semibold">{grade}</span>
-            <span className="text-gray-400 text-sm">— {label}</span>
+          <div className="inline-flex items-center gap-2 bg-[rgba(31,37,43,0.04)] border border-[rgba(31,37,43,0.08)] rounded-md px-3 py-1.5">
+            <span className="text-ink font-semibold">{grade}</span>
+            <span className="text-ink/60 text-sm">— {label}</span>
           </div>
         </div>
 
@@ -644,15 +634,15 @@ export default function ResultsPage() {
           if (gap <= 0) {
             return (
               <div className="flex items-center gap-3 bg-green-500/[0.06] border border-green-500/20 rounded-xl px-5 py-4">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 rounded-full bg-green-500/15 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-green-300">Above benchmark</p>
-                  <p className="text-sm text-gray-400">
-                    You scored <span className="font-semibold text-white">{userScore}</span> — {bench.label} typically target {bench.score}+. Keep going.
+                  <p className="text-sm font-semibold text-green-700">Above benchmark</p>
+                  <p className="text-sm text-ink/70">
+                    You scored <span className="font-semibold text-ink">{userScore}</span> — {bench.label} typically target {bench.score}+. Keep going.
                   </p>
                 </div>
               </div>
@@ -660,10 +650,10 @@ export default function ResultsPage() {
           }
 
           const urgency = gap >= 20
-            ? { color: 'border-red-500/20 bg-red-500/5', dot: 'bg-red-500/20', icon: 'text-red-400', bar: 'bg-red-500', msg: `Focused practice across ${bench.sessions} can close this.` }
+            ? { color: 'border-red-500/20 bg-red-500/5', dot: 'bg-red-500/15', icon: 'text-red-700', bar: 'bg-red-500', msg: `Focused practice across ${bench.sessions} can close this.` }
             : gap >= 10
-            ? { color: 'border-amber-500/20 bg-amber-500/5', dot: 'bg-amber-500/20', icon: 'text-amber-400', bar: 'bg-amber-500', msg: `Most users close that gap in ${bench.sessions}.` }
-            : { color: 'border-yellow-500/20 bg-yellow-500/5', dot: 'bg-yellow-500/20', icon: 'text-yellow-400', bar: 'bg-yellow-500', msg: `You're close — ${bench.sessions} should get you there.` }
+            ? { color: 'border-amber-500/20 bg-amber-500/5', dot: 'bg-amber-500/15', icon: 'text-amber-700', bar: 'bg-amber-500', msg: `Most users close that gap in ${bench.sessions}.` }
+            : { color: 'border-yellow-500/20 bg-yellow-500/5', dot: 'bg-yellow-500/15', icon: 'text-yellow-700', bar: 'bg-yellow-500', msg: `You're close — ${bench.sessions} should get you there.` }
 
           const pct = Math.min(99, Math.round((userScore / bench.score) * 100))
 
@@ -671,12 +661,12 @@ export default function ResultsPage() {
             <div className={`border rounded-xl px-5 py-4 flex flex-col gap-3 ${urgency.color}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white mb-0.5">
+                  <p className="text-sm font-semibold text-ink mb-0.5">
                     You scored <span className={urgency.icon}>{userScore}</span>.{' '}
-                    {bench.label} typically score <span className="text-white">{bench.score}+</span>.
+                    {bench.label} typically score <span className="text-ink">{bench.score}+</span>.
                   </p>
-                  <p className="text-sm text-gray-400">
-                    You're <span className="font-semibold text-white">{gap} points away</span> — {urgency.msg}
+                  <p className="text-sm text-ink/70">
+                    You're <span className="font-semibold text-ink">{gap} points away</span> — {urgency.msg}
                   </p>
                 </div>
                 <div className={`shrink-0 w-9 h-9 rounded-full ${urgency.dot} flex items-center justify-center`}>
@@ -687,11 +677,11 @@ export default function ResultsPage() {
               </div>
               {/* Progress bar toward benchmark */}
               <div>
-                <div className="flex justify-between text-xs text-ink-muted mb-1">
+                <div className="flex justify-between text-xs text-ink/60 mb-1">
                   <span>Your score</span>
                   <span>Benchmark: {bench.score}</span>
                 </div>
-                <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-700 ${urgency.bar}`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
@@ -701,12 +691,12 @@ export default function ResultsPage() {
 
         {/* Per-Question Breakdown */}
         <div>
-          <h2 className="text-white font-display font-black text-xl mb-4">Question Breakdown</h2>
+          <h2 className="text-ink font-serif font-bold text-xl mb-4">Question Breakdown</h2>
           <div className="space-y-4">
             {result.evaluations.map((ev, i) => (
-              <div key={i} className="bg-surface border border-line rounded-2xl p-5">
+              <div key={i} className="bg-surface border border-line rounded-2xl p-5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
                 <div className="flex items-start justify-between gap-4 mb-4">
-                  <p className="text-gray-200 font-medium text-sm leading-relaxed flex-1">
+                  <p className="text-ink/80 font-medium text-sm leading-relaxed flex-1">
                     <span className="text-brand font-semibold">Q{i + 1}.</span> {ev.question}
                   </p>
                   <span className={`text-2xl font-bold tabular-nums shrink-0 ${scoreColor(ev.average)}`}>
@@ -719,10 +709,10 @@ export default function ResultsPage() {
                   {Object.entries(ev.scores).map(([key, val]) => (
                     <div key={key}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-ink-muted capitalize">{key}</span>
-                        <span className="text-gray-400">{val}/10</span>
+                        <span className="text-ink/60 capitalize">{key}</span>
+                        <span className="text-ink/60">{val}/10</span>
                       </div>
-                      <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{ width: `${val * 10}%`, background: scoreBarGradient(val) }}
@@ -733,15 +723,15 @@ export default function ResultsPage() {
                 </div>
 
                 {/* STAR Analysis */}
-                <div className="border border-white/[0.08] rounded-lg p-4 mb-4">
+                <div className="border border-[rgba(31,37,43,0.08)] rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">STAR Analysis</p>
+                    <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider">STAR Analysis</p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-ink-muted">Score</span>
-                      <span className={`text-sm font-bold tabular-nums ${ev.star.starScore >= 3 ? 'text-green-400' : ev.star.starScore >= 2 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      <span className="text-xs text-ink/60">Score</span>
+                      <span className={`text-sm font-bold tabular-nums ${ev.star.starScore >= 3 ? 'text-green-600' : ev.star.starScore >= 2 ? 'text-yellow-600' : 'text-red-600'}`}>
                         {ev.star.starScore}
                       </span>
-                      <span className="text-xs text-ink-muted">/4</span>
+                      <span className="text-xs text-ink/60">/4</span>
                     </div>
                   </div>
 
@@ -751,7 +741,7 @@ export default function ResultsPage() {
                       const style = starRatingStyle(rating)
                       return (
                         <div key={component} className={`rounded-lg border px-3 py-2 ${style.bg} ${style.border}`}>
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                          <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider mb-1">
                             {component[0].toUpperCase()}
                           </p>
                           <div className="flex items-center gap-1.5">
@@ -774,9 +764,9 @@ export default function ResultsPage() {
                 </div>
 
                 {/* Answer preview */}
-                <div className="bg-surface-inset border border-white/[0.06] rounded-lg p-3">
-                  <p className="text-xs text-ink-muted font-medium mb-1">Your answer</p>
-                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">{ev.answer}</p>
+                <div className="bg-surface-inset border border-[rgba(31,37,43,0.06)] rounded-lg p-3">
+                  <p className="text-xs text-ink/60 font-medium mb-1">Your answer</p>
+                  <p className="text-ink/80 text-sm leading-relaxed line-clamp-3">{ev.answer}</p>
                 </div>
               </div>
             ))}
@@ -785,30 +775,30 @@ export default function ResultsPage() {
 
         {/* Filler Words */}
         {fillerData && (
-          <div className="bg-surface border border-line rounded-2xl overflow-hidden">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between gap-4">
+            <div className="px-5 py-4 border-b border-[rgba(31,37,43,0.08)] flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-yellow-500/15 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
                   {/* mic icon */}
-                  <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-white font-semibold text-sm">Filler Words</h2>
-                  <p className="text-xs text-ink-muted">A habit you may not have noticed</p>
+                  <h2 className="text-ink font-semibold text-sm">Filler Words</h2>
+                  <p className="text-xs text-ink/60">A habit you may not have noticed</p>
                 </div>
               </div>
               {/* Fluency score badge */}
               <div className="flex flex-col items-end shrink-0">
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-2xl font-bold tabular-nums ${fillerData.score >= 8 ? 'text-green-400' : fillerData.score >= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                  <span className={`text-2xl font-bold tabular-nums ${fillerData.score >= 8 ? 'text-green-600' : fillerData.score >= 5 ? 'text-yellow-600' : 'text-red-600'}`}>
                     {fillerData.score}
                   </span>
-                  <span className="text-xs text-ink-muted">/10</span>
+                  <span className="text-xs text-ink/60">/10</span>
                 </div>
-                <span className="text-xs text-ink-muted">Fluency</span>
+                <span className="text-xs text-ink/60">Fluency</span>
               </div>
             </div>
 
@@ -816,10 +806,10 @@ export default function ResultsPage() {
               {/* Summary callout */}
               {fillerData.totalFillers === 0 ? (
                 <div className="flex items-center gap-2.5 bg-green-500/[0.06] border border-green-500/20 rounded-md px-4 py-3">
-                  <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm text-green-300">No filler words detected — clean, confident delivery.</p>
+                  <p className="text-sm text-green-700">No filler words detected — clean, confident delivery.</p>
                 </div>
               ) : (
                 <div className={`flex items-start gap-2.5 rounded-md px-4 py-3 border ${
@@ -827,10 +817,10 @@ export default function ResultsPage() {
                     ? 'bg-yellow-500/8 border-yellow-500/20'
                     : 'bg-red-500/8 border-red-500/20'
                 }`}>
-                  <svg className={`w-4 h-4 shrink-0 mt-0.5 ${fillerData.score >= 7 ? 'text-yellow-400' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-4 h-4 shrink-0 mt-0.5 ${fillerData.score >= 7 ? 'text-yellow-700' : 'text-red-700'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className={`text-sm leading-relaxed ${fillerData.score >= 7 ? 'text-yellow-300' : 'text-red-300'}`}>
+                  <p className={`text-sm leading-relaxed ${fillerData.score >= 7 ? 'text-yellow-800' : 'text-red-800'}`}>
                     You used <span className="font-semibold">{fillerData.totalFillers} filler word{fillerData.totalFillers !== 1 ? 's' : ''}</span> across {result!.evaluations.length} answers
                     {fillerData.totalWords > 0 && (
                       <> — about <span className="font-semibold">1 every {Math.round(fillerData.totalWords / fillerData.totalFillers)} words</span></>
@@ -844,22 +834,22 @@ export default function ResultsPage() {
 
               {/* Per-question bars */}
               <div>
-                <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">By Question</p>
+                <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider mb-3">By Question</p>
                 <div className="flex flex-col gap-2">
                   {result!.evaluations.map((ev, i) => {
                     const count = fillerData.perAnswer[i].total
                     const barPct = fillerData.maxPerAnswer > 0 ? (count / fillerData.maxPerAnswer) * 100 : 0
-                    const barColor = count === 0 ? 'bg-gray-700' : count <= 2 ? 'bg-yellow-500' : 'bg-red-500'
+                    const barColor = count === 0 ? 'bg-[rgba(31,37,43,0.15)]' : count <= 2 ? 'bg-yellow-500' : 'bg-red-500'
                     return (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="text-xs text-ink-muted w-4 shrink-0 text-right">Q{i + 1}</span>
-                        <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                        <span className="text-xs text-ink/60 w-4 shrink-0 text-right">Q{i + 1}</span>
+                        <div className="flex-1 h-2 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                             style={{ width: `${Math.max(barPct, count > 0 ? 4 : 0)}%` }}
                           />
                         </div>
-                        <span className={`text-xs font-medium w-14 shrink-0 ${count === 0 ? 'text-gray-600' : count <= 2 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        <span className={`text-xs font-medium w-14 shrink-0 ${count === 0 ? 'text-ink/40' : count <= 2 ? 'text-yellow-700' : 'text-red-700'}`}>
                           {count === 0 ? 'none' : `${count} filler${count !== 1 ? 's' : ''}`}
                         </span>
                       </div>
@@ -871,26 +861,26 @@ export default function ResultsPage() {
               {/* Top filler words */}
               {fillerData.ranked.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">Most Used</p>
+                  <p className="text-xs font-semibold text-ink/60 uppercase tracking-wider mb-3">Most Used</p>
                   <div className="flex flex-wrap gap-2">
                     {fillerData.ranked.map(({ word, count }, i) => (
                       <div
                         key={word}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${
                           i === 0
-                            ? 'bg-red-500/12 border-red-500/25 text-red-300'
-                            : 'bg-white/[0.04] border-white/10 text-gray-400'
+                            ? 'bg-red-500/10 border-red-500/25 text-red-700'
+                            : 'bg-[rgba(31,37,43,0.04)] border-[rgba(31,37,43,0.1)] text-ink/60'
                         }`}
                       >
                         <span>"{word}"</span>
-                        <span className={`font-bold ${i === 0 ? 'text-red-400' : 'text-gray-500'}`}>×{count}</span>
+                        <span className={`font-bold ${i === 0 ? 'text-red-700' : 'text-ink/50'}`}>×{count}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <p className="text-xs text-ink-muted leading-relaxed">
+              <p className="text-xs text-ink/60 leading-relaxed">
                 Detection covers: um, uh, like, so, literally, basically, right, you know, kind of, sort of.
                 Some may reflect intentional usage — use as a directional signal, not an exact count.
               </p>
@@ -901,36 +891,36 @@ export default function ResultsPage() {
         {/* Feedback Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Biggest Mistakes */}
-          <div className="bg-surface border border-line rounded-2xl p-5">
+          <div className="bg-surface border border-line rounded-2xl p-5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
             <div className="flex items-center gap-2 mb-4">
-              <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h3 className="text-cream font-semibold text-sm tracking-tight">3 Biggest Mistakes</h3>
+              <h3 className="text-ink font-semibold text-sm tracking-tight">3 Biggest Mistakes</h3>
             </div>
             <ol className="space-y-2.5">
               {result.biggestMistakes.map((mistake, i) => (
                 <li key={i} className="flex gap-2.5 text-sm">
-                  <span className="text-red-400 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
-                  <span className="text-gray-400 leading-relaxed">{mistake}</span>
+                  <span className="text-red-600 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
+                  <span className="text-ink/70 leading-relaxed">{mistake}</span>
                 </li>
               ))}
             </ol>
           </div>
 
           {/* Improvements */}
-          <div className="bg-surface border border-line rounded-2xl p-5">
+          <div className="bg-surface border border-line rounded-2xl p-5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
             <div className="flex items-center gap-2 mb-4">
-              <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              <h3 className="text-cream font-semibold text-sm tracking-tight">3 Key Improvements</h3>
+              <h3 className="text-ink font-semibold text-sm tracking-tight">3 Key Improvements</h3>
             </div>
             <ol className="space-y-2.5">
               {result.improvements.map((tip, i) => (
                 <li key={i} className="flex gap-2.5 text-sm">
-                  <span className="text-green-400 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
-                  <span className="text-gray-400 leading-relaxed">{tip}</span>
+                  <span className="text-green-600 font-semibold shrink-0 mt-0.5 tabular-nums">{i + 1}.</span>
+                  <span className="text-ink/70 leading-relaxed">{tip}</span>
                 </li>
               ))}
             </ol>
@@ -938,14 +928,14 @@ export default function ResultsPage() {
         </div>
 
         {/* Example Better Answer */}
-        <div className="bg-surface border border-line rounded-2xl p-5">
+        <div className="bg-surface border border-line rounded-2xl p-5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-4 h-4 text-brand shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
-            <h3 className="text-cream font-semibold text-sm tracking-tight">Example Better Answer</h3>
+            <h3 className="text-ink font-semibold text-sm tracking-tight">Example Better Answer</h3>
           </div>
-          <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words">
+          <p className="text-ink/80 text-sm leading-relaxed whitespace-pre-wrap break-words">
             {result.exampleBetterAnswer}
           </p>
         </div>
@@ -956,7 +946,7 @@ export default function ResultsPage() {
           <button
             onClick={generateShareCard}
             disabled={isGenerating || !sessionData}
-            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-50 disabled:cursor-not-allowed text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
+            className="flex items-center gap-2 bg-[rgba(31,37,43,0.04)] hover:bg-[rgba(31,37,43,0.08)] disabled:opacity-50 disabled:cursor-not-allowed text-ink/80 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-[rgba(31,37,43,0.1)] hover:border-[rgba(31,37,43,0.2)]"
           >
             {isGenerating ? (
               <>
@@ -977,7 +967,7 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push(`/interview/${sessionId}`)}
-            className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-blacktop font-semibold text-sm px-4 py-2.5 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all"
+            className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm px-4 py-2.5 rounded-md shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -986,14 +976,14 @@ export default function ResultsPage() {
           </button>
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
+            className="flex items-center gap-2 bg-[rgba(31,37,43,0.04)] hover:bg-[rgba(31,37,43,0.08)] text-ink/80 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-[rgba(31,37,43,0.1)] hover:border-[rgba(31,37,43,0.2)]"
           >
             New Interview
           </button>
 
           <button
             onClick={() => { setEmailOpen((o) => !o); setEmailStatus('idle'); setEmailError('') }}
-            className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] text-gray-200 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-white/10 hover:border-white/20"
+            className="flex items-center gap-2 bg-[rgba(31,37,43,0.04)] hover:bg-[rgba(31,37,43,0.08)] text-ink/80 font-medium text-sm px-4 py-2.5 rounded-md transition-colors border border-[rgba(31,37,43,0.1)] hover:border-[rgba(31,37,43,0.2)]"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -1007,10 +997,10 @@ export default function ResultsPage() {
           <div className="w-full max-w-sm">
             {emailStatus === 'sent' ? (
               <div className="flex items-center gap-2.5 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
-                <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-sm text-green-300">Results sent to <span className="font-medium">{emailAddress}</span></p>
+                <p className="text-sm text-green-700">Results sent to <span className="font-medium">{emailAddress}</span></p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -1021,13 +1011,13 @@ export default function ResultsPage() {
                     onChange={(e) => setEmailAddress(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendEmail()}
                     placeholder="your@email.com"
-                    className="flex-1 bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
+                    className="flex-1 bg-surface-input border border-[rgba(31,37,43,0.12)] rounded-md px-3 py-2.5 text-ink placeholder-ink/40 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
                     autoFocus
                   />
                   <button
                     onClick={sendEmail}
                     disabled={emailStatus === 'sending' || !emailAddress.trim()}
-                    className="flex items-center gap-1.5 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-blacktop font-semibold px-4 py-2.5 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
+                    className="flex items-center gap-1.5 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-md shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all text-sm"
                   >
                     {emailStatus === 'sending' ? (
                       <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -1038,7 +1028,7 @@ export default function ResultsPage() {
                   </button>
                 </div>
                 {emailStatus === 'error' && (
-                  <p className="text-xs text-red-400 px-1">{emailError}</p>
+                  <p className="text-xs text-red-600 px-1">{emailError}</p>
                 )}
               </div>
             )}
@@ -1052,7 +1042,7 @@ export default function ResultsPage() {
 
         {/* Share Your Feedback */}
         <div>
-          <h2 className="text-white font-display font-black text-xl mb-4">Share Your Feedback</h2>
+          <h2 className="text-ink font-serif font-bold text-xl mb-4">Share Your Feedback</h2>
           <iframe
             src="https://docs.google.com/forms/d/1aCvDzFyUWJx4-KkPzQ-FINWARaYjY6f276phmf4SxAU/viewform?embedded=true"
             width="100%"
@@ -1065,7 +1055,7 @@ export default function ResultsPage() {
 
         {/* Footer */}
         <footer className="pb-10 pt-4 text-center">
-          <p className="text-xs text-ink-muted/60">© 2026 Runback&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
+          <p className="text-xs text-ink/50">© 2026 Runback&nbsp;&nbsp;·&nbsp;&nbsp;Built for students, by students</p>
         </footer>
       </div>
     </div>

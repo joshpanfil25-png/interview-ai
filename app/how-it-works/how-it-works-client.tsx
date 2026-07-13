@@ -118,7 +118,7 @@ const FAQS: { q: string; a: string }[] = [
 ]
 
 const ctaClass =
-  'inline-flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-hover text-blacktop font-semibold text-sm px-6 py-3 rounded-md ring-1 ring-inset ring-black/10 shadow-[0_4px_16px_rgba(255,90,31,0.4)] hover:shadow-[0_6px_20px_rgba(255,90,31,0.5)] transition-all'
+  'inline-flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-hover text-blacktop font-semibold text-sm px-6 py-3 rounded-md ring-1 ring-inset ring-black/10 shadow-[0_8px_20px_rgba(13,95,99,0.25)] hover:shadow-[0_10px_26px_rgba(13,95,99,0.32)] transition-all'
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -150,7 +150,7 @@ export default function HowItWorksClient() {
       <header className="border-b border-line">
         <nav className="max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-brand shadow-[0_0_24px_rgba(255,90,31,0.45)]">
+            <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-brand shadow-[0_0_24px_rgba(13,95,99,0.35)]">
               <LogoMark className="w-5 h-5 text-blacktop" />
             </div>
             <span className="font-display text-[22px] font-black text-cream">runback</span>
@@ -162,7 +162,7 @@ export default function HowItWorksClient() {
       <main className="flex-1 max-w-[760px] mx-auto w-full px-6 py-12 space-y-14">
         {/* ── Hero ─────────────────────────────────────────────── */}
         <section className="text-center">
-          <div className="inline-flex items-center gap-2 bg-white/[0.06] border border-line rounded-full px-3.5 py-1.5 mb-6">
+          <div className="inline-flex items-center gap-2 bg-[rgba(31,37,43,0.05)] border border-line rounded-full px-3.5 py-1.5 mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-volt" />
             <span className="text-xs text-ink-muted">How it works</span>
           </div>
@@ -180,7 +180,7 @@ export default function HowItWorksClient() {
 
           {/* "Ahead of 90%" encouragement */}
           <div className="relative bg-surface border border-line rounded-2xl p-6 overflow-hidden text-left mb-8">
-            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
             <p className="font-display font-black text-lg text-cream tracking-tight mb-1.5">
               You&rsquo;re already ahead of 90% of people.
             </p>
@@ -238,13 +238,13 @@ export default function HowItWorksClient() {
                 <li key={step.title} className="relative flex gap-4 pb-4 last:pb-0">
                   {/* Timeline connector */}
                   {i < STEPS.length - 1 && (
-                    <span aria-hidden className="absolute left-[17px] top-11 bottom-0 w-px bg-white/[0.08]" />
+                    <span aria-hidden className="absolute left-[17px] top-11 bottom-0 w-px bg-[rgba(31,37,43,0.12)]" />
                   )}
                   {/* Step number node */}
                   <div
                     className={`relative z-[1] shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-display font-black text-sm transition-colors duration-200 ${
                       isOpen
-                        ? 'bg-brand text-blacktop shadow-[0_0_16px_rgba(255,90,31,0.35)]'
+                        ? 'bg-brand text-blacktop shadow-[0_0_16px_rgba(13,95,99,0.3)]'
                         : 'bg-surface border border-line text-ink-muted'
                     }`}
                   >
@@ -258,13 +258,13 @@ export default function HowItWorksClient() {
                       onClick={() => toggleStep(i)}
                       aria-expanded={isOpen}
                       aria-controls={bodyId}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 sm:px-5 hover:bg-white/[0.04] transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-3.5 sm:px-5 hover:bg-[rgba(31,37,43,0.04)] transition-colors text-left"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-sm font-semibold text-cream">{step.title}</h3>
                           {step.optional && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/[0.06] text-ink-muted border border-line">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(31,37,43,0.05)] text-ink-muted border border-line">
                               Optional
                             </span>
                           )}
@@ -281,21 +281,21 @@ export default function HowItWorksClient() {
                             <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                             What you do
                           </p>
-                          <p className="text-sm text-gray-300 leading-relaxed">{step.you}</p>
+                          <p className="text-sm text-ink/80 leading-relaxed">{step.you}</p>
                         </div>
                         <div>
                           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-volt mb-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-volt" />
                             What Runback does
                           </p>
-                          <p className="text-sm text-gray-300 leading-relaxed">{step.runback}</p>
+                          <p className="text-sm text-ink/80 leading-relaxed">{step.runback}</p>
                         </div>
                         <div>
                           <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                             Why this helps you
                           </p>
-                          <p className="text-sm text-gray-300 leading-relaxed">{step.why}</p>
+                          <p className="text-sm text-ink/80 leading-relaxed">{step.why}</p>
                         </div>
                         {step.coach && (
                           <div className="rounded-md px-3 py-2.5 text-xs bg-brand/[0.08] border border-brand/25 text-brand leading-relaxed">
@@ -322,7 +322,7 @@ export default function HowItWorksClient() {
             </p>
           </div>
 
-          <div className="border border-white/[0.08] rounded-lg overflow-hidden divide-y divide-white/[0.06]">
+          <div className="border border-[rgba(31,37,43,0.08)] rounded-lg overflow-hidden divide-y divide-[rgba(31,37,43,0.06)]">
             {FAQS.map((faq, i) => {
               const isOpen = openFaq === i
               const bodyId = `faq-body-${i}`
@@ -333,9 +333,9 @@ export default function HowItWorksClient() {
                     onClick={() => setOpenFaq(isOpen ? null : i)}
                     aria-expanded={isOpen}
                     aria-controls={bodyId}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 bg-surface hover:bg-white/[0.04] transition-colors text-left"
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 bg-surface hover:bg-[rgba(31,37,43,0.04)] transition-colors text-left"
                   >
-                    <h3 className="text-sm font-medium text-gray-200">{faq.q}</h3>
+                    <h3 className="text-sm font-medium text-ink">{faq.q}</h3>
                     <Chevron open={isOpen} />
                   </button>
                   {isOpen && (
@@ -352,7 +352,7 @@ export default function HowItWorksClient() {
         {/* ── Closing: skill, not talent ───────────────────────── */}
         <section>
           <div className="relative bg-surface border border-line rounded-2xl overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
             <div className="px-6 py-8 sm:px-10 sm:py-10 text-center">
               <h2 className="font-display font-black text-2xl text-cream tracking-tight mb-4">
                 Nobody is born good at interviews.
@@ -364,7 +364,7 @@ export default function HowItWorksClient() {
                 makes the real thing feel less like a test and more like a conversation
                 you&rsquo;ve already had.
               </p>
-              <p className="text-gray-300 font-medium max-w-[520px] mx-auto mb-7">
+              <p className="text-ink/80 font-medium max-w-[520px] mx-auto mb-7">
                 You don&rsquo;t need to be impressive today. You just need to start — and you
                 already have.
               </p>

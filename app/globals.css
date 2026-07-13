@@ -1,35 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  /* Runback brand tokens */
-  --color-cream: #F5F1E8;
-  --color-blacktop: #121212;
-  --color-brand: #FF5A1F;        /* Sprint Orange — primary/actions */
-  --color-brand-hover: #E64A12;
-  --color-volt: #D9FF3F;         /* scores/wins */
+  /* Runback brand tokens — "Teal Glass" rebrand */
+  /* Legacy dark-theme text tokens, aliased for the light theme: cream was
+     "light text on dark bg" (now dark ink on light bg); blacktop was "dark
+     text for contrast on the bright brand color" (brand is now a dark teal,
+     so it needs white text instead). Kept as aliases rather than rewriting
+     every call site across both branches' files. */
+  --color-cream: #0A0A0A;
+  --color-blacktop: #FFFFFF;
+  --color-brand: #0D5F63;        /* Carbon Teal — primary/actions */
+  --color-brand-hover: #0A4A4D;
+  --color-volt: #A8E0DD;         /* Sea Glass — light accent, was Volt */
   --color-turf: #0E3B2E;
 
-  /* Warm-dark surfaces */
-  --color-surface: #1a1712;
-  --color-surface-input: #241f18;
-  --color-surface-inset: #14110d;
+  /* Light glass surfaces */
+  --color-surface: #FFFFFF;
+  --color-surface-input: #F1F4F6;
+  --color-surface-inset: #EAEEF1;
 
-  /* Ink + lines */
-  --color-ink: #F5F1E8;
-  --color-ink-muted: #b8b0a2;
-  --color-line: rgba(245, 241, 232, 0.10);
-  --color-line-hover: rgba(245, 241, 232, 0.20);
+  /* Ink + lines — single ink color across the system, no muted secondary */
+  --color-ink: #0A0A0A;
+  --color-ink-muted: #0A0A0A;
+  --color-line: rgba(31, 37, 43, 0.08);
+  --color-line-hover: rgba(31, 37, 43, 0.16);
+
+  /* Glass material */
+  --color-glass-fill: rgba(255, 255, 255, 0.5);
+  --color-glass-border: rgba(255, 255, 255, 0.85);
+
+  --font-serif: "Source Serif 4", Georgia, serif;
 }
 
 :root {
-  /* Warm-dark shell — legacy vars kept for existing references */
-  --bg-top: #14110d;
-  --bg-bottom: #0e0b08;
-  --surface: #1a1712;       /* cards */
-  --surface-input: #241f18; /* input fields */
-  --surface-inset: #14110d; /* nested panels */
-  --border: rgba(245, 241, 232, 0.10);
-  --border-hover: rgba(245, 241, 232, 0.20);
+  /* Light shell — legacy vars kept for existing references */
+  --bg-top: #FFFFFF;
+  --bg-bottom: #F1F4F6;
+  --surface: #FFFFFF;       /* cards */
+  --surface-input: #F1F4F6; /* input fields */
+  --surface-inset: #EAEEF1; /* nested panels */
+  --border: rgba(31, 37, 43, 0.08);
+  --border-hover: rgba(31, 37, 43, 0.16);
 }
 
 * {
@@ -44,18 +55,31 @@ body {
 }
 
 body {
-  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-serif);
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   background-color: var(--bg-bottom);
   background-attachment: fixed;
-  color: #F5F1E8;
+  color: #0A0A0A;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Display / wordmark face */
+/* Display / wordmark face — same serif as body, weight carries the hierarchy */
 .font-display {
-  font-family: var(--font-archivo), 'Archivo Black', sans-serif;
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+/* Glassy gradient-text wordmark treatment — use only on the literal word
+   "Runback" as a wordmark (nav, login, sidebar), never on body copy. */
+.rb-wordmark {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  background-image: linear-gradient(120deg, #0D5F63 0%, #4FA6A0 35%, #A8E0DD 55%, #0D5F63 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(13, 95, 99, 0.15));
 }
 
 /* Quiet entrance — opacity only, no slide/bounce */
@@ -68,6 +92,34 @@ body {
   animation: fadeIn 0.18s ease-out both;
 }
 
+/* ── Teal Glass motion system ─────────────────────────────
+   Slow, ambient, purposeful — blob breathes and drifts; hero copy reveals
+   in a staggered rise. Ported from the design handoff's kit.css. */
+
+@keyframes rb-blob-flow {
+  0%   { border-radius: 38% 62% 60% 40% / 45% 40% 60% 55%; transform: rotate(0deg) scale(1); }
+  33%  { border-radius: 55% 45% 40% 60% / 60% 45% 55% 40%; transform: rotate(4deg) scale(1.04); }
+  66%  { border-radius: 45% 55% 65% 35% / 40% 60% 40% 60%; transform: rotate(-3deg) scale(0.98); }
+  100% { border-radius: 38% 62% 60% 40% / 45% 40% 60% 55%; transform: rotate(0deg) scale(1); }
+}
+.rb-blob-flow { animation: rb-blob-flow 14s ease-in-out infinite; }
+
+@keyframes rb-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+.rb-float { animation: rb-float 6s ease-in-out infinite; }
+
+@keyframes rb-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rb-rise-in { animation: rb-rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-blob-flow, .rb-float, .rb-rise-in { animation: none; }
+}
+
 /* Scrollbar — neutral, minimal */
 ::-webkit-scrollbar {
   width: 8px;
@@ -77,11 +129,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 241, 232, 0.12);
+  background: rgba(31, 37, 43, 0.12);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 241, 232, 0.22);
+  background: rgba(31, 37, 43, 0.22);
 }
 
 /* Line clamp */

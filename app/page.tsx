@@ -88,8 +88,7 @@ export default function Marketing() {
           <img
             src="/teal-glass/logo/runback-glass-monogram.png"
             alt="Runback glass mark"
-            className="rb-float relative w-[260px] sm:w-[480px] max-w-none object-contain"
-            style={{ animationDelay: '1s' }}
+            className="relative w-[260px] sm:w-[480px] max-w-none object-contain"
           />
         </div>
       </section>

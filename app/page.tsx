@@ -5,16 +5,14 @@ import Link from 'next/link'
 import { Glass, GlassWordmark, PressButton, RunbackLogoChip, TealBlob } from '@/app/components/teal-glass'
 import { NavAuth } from '@/components/auth/NavAuth'
 
-// Links map to real routes where a page exists; the rest are visual-only per
-// the design handoff scope (no Mock Interview/Practice/Readiness Report
-// pages exist yet) and simply set local active state.
+// Nav shows only tabs that route to a live page today. The design-handoff
+// placeholders (Mock Interview, Practice, Readiness Report) had no real pages,
+// and Resources → /how-it-works is being held back with them for now — all
+// removed until they're real features, then add them back here. The Get
+// Started / Sign in CTAs live in the nav's right section, not this list.
 const NAV_LINKS: { label: string; href?: string }[] = [
   { label: 'Home', href: '/' },
-  { label: 'Mock Interview' },
-  { label: 'Practice' },
-  { label: 'Resources', href: '/how-it-works' },
   { label: 'Your Profile', href: '/profile' },
-  { label: 'Readiness Report' },
 ]
 
 export default function Marketing() {

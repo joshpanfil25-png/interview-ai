@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF5A1F" stroke="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0D5F63" stroke="none">
+  <!-- Runback "rewind" double-chevron mark (run it back), Carbon Teal. -->
   <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
   <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
 </svg>

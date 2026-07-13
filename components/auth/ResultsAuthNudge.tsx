@@ -21,10 +21,10 @@ export function ResultsAuthNudge() {
       <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
-          <p className="font-display font-black text-lg text-cream tracking-tight">
+          <p className="font-serif font-bold text-lg text-ink tracking-tight">
             Save your results &amp; track your progress
           </p>
-          <p className="text-sm text-ink-muted mt-1 leading-relaxed">
+          <p className="text-sm text-ink/70 mt-1 leading-relaxed">
             Sign in to keep every mock and watch your scores climb over time.
           </p>
         </div>

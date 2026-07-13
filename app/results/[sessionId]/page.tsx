@@ -319,30 +319,32 @@ export default function ResultsPage() {
       }
 
       // ── Flat background (no gradient) ──────────────────
-      ctx.fillStyle = '#14110d'
+      ctx.fillStyle = '#FFFFFF'
       ctx.fillRect(0, 0, W, H)
 
       // ── Brand top accent bar ───────────────────────────
-      ctx.fillStyle = '#FF5A1F'
+      ctx.fillStyle = '#0D5F63'
       ctx.fillRect(0, 0, W, 4)
 
       // ── Score colour ───────────────────────────────────
       const score = result.overallScore
       const scoreStr = score.toString()
-      const scoreHex = score >= 8 ? '#4ade80' : score >= 6 ? '#facc15' : '#f87171'
+      // Semantic score colours — legible-on-light variants (green=good,
+      // amber=okay, red=poor). Deliberately NOT the brand teal.
+      const scoreHex = score >= 8 ? '#16a34a' : score >= 6 ? '#ca8a04' : '#dc2626'
       const { grade, label } = overallGrade(score)
 
       // ── LEFT PANEL (center x = 290) ────────────────────
       const LCX = 290
 
       // "OVERALL SCORE" label
-      ctx.fillStyle = '#4b5563'
+      ctx.fillStyle = '#6b7280'
       ctx.font = '500 11px system-ui, -apple-system, sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText('OVERALL SCORE', LCX, 108)
 
       // Score + "/10" measured and centred together
-      const SCORE_FONT = 'bold 118px system-ui, -apple-system, sans-serif'
+      const SCORE_FONT = 'bold 118px "Source Serif 4", Georgia, serif'
       const SUFFIX_FONT = '300 36px system-ui, -apple-system, sans-serif'
       ctx.font = SCORE_FONT
       const scoreW = ctx.measureText(scoreStr).width
@@ -356,7 +358,7 @@ export default function ResultsPage() {
       ctx.fillText(scoreStr, numStart, 306)
 
       ctx.font = SUFFIX_FONT
-      ctx.fillStyle = '#374151'
+      ctx.fillStyle = '#94a3b8'
       ctx.fillText('/10', numStart + scoreW + 10, 306)
 
       // Grade pill
@@ -370,16 +372,16 @@ export default function ResultsPage() {
       const pillX = LCX - pillW / 2
       const pillY = 332
 
-      ctx.fillStyle = '#1f2937'
+      ctx.fillStyle = '#0A0A0A'
       ctx.beginPath()
       ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2)
       ctx.fill()
-      ctx.fillStyle = '#e5e7eb'
+      ctx.fillStyle = '#FFFFFF'
       ctx.textAlign = 'center'
       ctx.fillText(pillText, LCX, pillY + 22)
 
       // ── Vertical divider ───────────────────────────────
-      ctx.strokeStyle = '#1f2937'
+      ctx.strokeStyle = 'rgba(31,37,43,0.12)'
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(575, 48)
@@ -391,15 +393,15 @@ export default function ResultsPage() {
       const RPW = 1158 - RPX // 540 px
 
       // "PRACTICED FOR" eyebrow
-      ctx.fillStyle = '#4b5563'
+      ctx.fillStyle = '#6b7280'
       ctx.font = '500 11px system-ui, -apple-system, sans-serif'
       ctx.textAlign = 'left'
       ctx.fillText('PRACTICED FOR', RPX, 108)
 
       // Role (up to 2 lines)
-      const ROLE_FONT = 'bold 32px system-ui, -apple-system, sans-serif'
+      const ROLE_FONT = 'bold 32px "Source Serif 4", Georgia, serif'
       const roleLines = wrapText(sessionData.role, ROLE_FONT, RPW).slice(0, 2)
-      ctx.fillStyle = '#f9fafb'
+      ctx.fillStyle = '#0A0A0A'
       ctx.font = ROLE_FONT
       roleLines.forEach((line, i) => ctx.fillText(line, RPX, 148 + i * 40))
       const afterRole = 148 + roleLines.length * 40
@@ -410,19 +412,19 @@ export default function ResultsPage() {
       ctx.fillText('at', RPX, afterRole + 16)
 
       // Company (brand, single line truncated)
-      const CO_FONT = 'bold 26px system-ui, -apple-system, sans-serif'
+      const CO_FONT = 'bold 26px "Source Serif 4", Georgia, serif'
       ctx.font = CO_FONT
       let company = sessionData.company
       while (ctx.measureText(company).width > RPW && company.length > 1) {
         company = company.slice(0, -1)
       }
       if (company !== sessionData.company) company += '…'
-      ctx.fillStyle = '#FF7A45'
+      ctx.fillStyle = '#0D5F63'
       ctx.fillText(company, RPX, afterRole + 50)
 
       // Section divider
       const divY = afterRole + 72
-      ctx.strokeStyle = '#1f2937'
+      ctx.strokeStyle = 'rgba(31,37,43,0.12)'
       ctx.beginPath()
       ctx.moveTo(RPX, divY)
       ctx.lineTo(1158, divY)
@@ -442,9 +444,9 @@ export default function ResultsPage() {
       dims.forEach((dim, i) => {
         const y = barY0 + i * BAR_SPACING
         const avg = avgScores[i]
-        const barColor = avg >= 8 ? '#4ade80' : avg >= 6 ? '#facc15' : '#f87171'
+        const barColor = avg >= 8 ? '#16a34a' : avg >= 6 ? '#ca8a04' : '#dc2626'
 
-        ctx.fillStyle = '#9ca3af'
+        ctx.fillStyle = '#64748b'
         ctx.font = '400 12px system-ui, -apple-system, sans-serif'
         ctx.textAlign = 'left'
         ctx.fillText(dim, RPX, y)
@@ -455,7 +457,7 @@ export default function ResultsPage() {
         ctx.fillText(avg.toFixed(1), 1158, y)
 
         // Track
-        ctx.fillStyle = '#1f2937'
+        ctx.fillStyle = 'rgba(31,37,43,0.10)'
         ctx.beginPath()
         ctx.roundRect(RPX, y + 7, RPW, BAR_H, 4)
         ctx.fill()
@@ -471,19 +473,19 @@ export default function ResultsPage() {
       })
 
       // ── Footer ─────────────────────────────────────────
-      ctx.strokeStyle = '#1f2937'
+      ctx.strokeStyle = 'rgba(31,37,43,0.12)'
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(0, 560)
       ctx.lineTo(W, 560)
       ctx.stroke()
 
-      // App icon box — brand orange with double-chevron rewind mark
-      ctx.fillStyle = '#FF5A1F'
+      // App icon box — brand teal with double-chevron rewind mark
+      ctx.fillStyle = '#0D5F63'
       ctx.beginPath()
       ctx.roundRect(40, 577, 30, 30, 7)
       ctx.fill()
-      ctx.fillStyle = '#121212'
+      ctx.fillStyle = '#FFFFFF'
       // right chevron
       ctx.beginPath()
       ctx.moveTo(59, 586)
@@ -506,8 +508,8 @@ export default function ResultsPage() {
       ctx.fillText('Practiced with', 82, 597)
       ctx.font = '400 14px system-ui, -apple-system, sans-serif'
       const prefixW = ctx.measureText('Practiced with ').width
-      ctx.font = '600 14px system-ui, -apple-system, sans-serif'
-      ctx.fillStyle = '#FF7A45'
+      ctx.font = '700 15px "Source Serif 4", Georgia, serif'
+      ctx.fillStyle = '#0D5F63'
       ctx.fillText('Runback', 82 + prefixW, 597)
 
       // ── Download ───────────────────────────────────────

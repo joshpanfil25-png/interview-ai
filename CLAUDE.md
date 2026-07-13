@@ -51,7 +51,7 @@ GitHub admin) and Caroline (question quality / prompt engineering owner).
 ## Code Style
 - camelCase for variables/functions, PascalCase for components
 - Tailwind utility classes inline in JSX — no separate CSS modules or styled-components
-- Brand colors/fonts referenced as CSS custom properties (`--color-brand`, `--font-inter`,
+- Brand colors/fonts referenced as CSS custom properties (`--color-brand`, `--font-serif`,
   etc.) defined in `app/globals.css` — never hardcode a hex value that already has a token
 - Keep API route files self-contained: types, prompt-building, and the handler all live
   in the same `route.ts` unless a type is genuinely shared across multiple routes

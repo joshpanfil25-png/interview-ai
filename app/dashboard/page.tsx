@@ -48,8 +48,19 @@ export default function Dashboard() {
   })()
 
   return (
-    <main className="relative min-h-screen flex bg-gradient-to-b from-white to-[#F1F4F6] animate-fade-in overflow-hidden">
+    <main className="relative min-h-screen flex flex-col md:flex-row bg-gradient-to-b from-white to-[#F1F4F6] animate-fade-in overflow-hidden">
       <div className="absolute w-[200px] h-[200px] rounded-full -top-15 -right-15 bg-[radial-gradient(circle,rgba(168,224,221,0.3),transparent_70%)] pointer-events-none" />
+
+      {/* Mobile top bar — sidebar below is desktop-only, this replaces it on narrow viewports */}
+      <div className="flex md:hidden items-center justify-between px-4 pt-4 relative z-2">
+        <Link href="/" className="flex items-center gap-2">
+          <RunbackLogoChip size={26} />
+          <GlassWordmark className="text-base" />
+        </Link>
+        <Link href="/profile" className="text-xs font-semibold text-ink/70 hover:text-brand transition-colors">
+          Profile
+        </Link>
+      </div>
 
       {/* Sidebar */}
       <Glass className="hidden md:flex w-[220px] m-4 rounded-[18px] p-4 flex-col gap-1 relative z-2 shrink-0">

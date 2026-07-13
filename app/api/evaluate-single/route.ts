@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
 Question: ${question}
 Answer: ${answer}
 
-Lead with sincere recognition of what worked, then frame the next step as an opportunity to get even stronger. Stay honest and specific — don't paper over real gaps — but keep the delivery warm and motivating. Return ONLY a valid JSON object with no extra text:
+Lead with sincere recognition of what worked, then frame the next step as an opportunity to get even stronger. Stay honest and specific — don't paper over real gaps — but keep the delivery warm and motivating. Scoring floor — this overrides the encouraging tone above: if the answer is empty, a single stray character, gibberish, or otherwise does not genuinely attempt to answer the question, score it 0 and do not manufacture praise for it (leave didWell empty or state plainly that there was no attempt to assess). Reserve 1-2 only for a real but very weak attempt. Return ONLY a valid JSON object with no extra text:
 {
-  "score": <integer 1-10>,
+  "score": <integer 0-10>,
   "didWell": "<one encouraging, specific sentence — the single most effective thing they did>",
   "improve": "<one constructive sentence — the single biggest opportunity to make this answer stronger next time, framed as a growth move rather than a failure>"
 }`
@@ -45,7 +45,7 @@ Lead with sincere recognition of what worked, then frame the next step as an opp
     const parsed = JSON.parse(jsonMatch[0])
 
     const result: SingleFeedback = {
-      score: typeof parsed.score === 'number' ? Math.min(10, Math.max(1, Math.round(parsed.score))) : 5,
+      score: typeof parsed.score === 'number' ? Math.min(10, Math.max(0, Math.round(parsed.score))) : 5,
       didWell: parsed.didWell || '',
       improve: parsed.improve || '',
     }

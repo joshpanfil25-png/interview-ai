@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { countFillers, rankFillers } from '@/lib/fillerWords'
 import { GlassWordmark, RunbackLogoChip } from '@/app/components/teal-glass'
 
@@ -52,6 +52,12 @@ export default function InterviewPage() {
   // ── Load questions from Supabase ────────────────────────────
   useEffect(() => {
     async function loadQuestions() {
+      const supabase = getSupabaseBrowserClient()
+      // Ensure the auth session is hydrated before querying so a logged-in
+      // user's JWT is attached (auth.uid() = user_id). Guests have no session,
+      // so this is a no-op and reads run as anon → null-user_id rows visible.
+      await supabase.auth.getSession()
+
       const { data, error } = await supabase
         .from('questions')
         .select('*')
@@ -157,7 +163,11 @@ export default function InterviewPage() {
 
     const currentQuestion = questions[currentIndex]
 
-    // Upsert answer (overwrites any previous attempt for this question)
+    // Upsert answer (overwrites any previous attempt for this question). Uses
+    // the auth-aware browser client so a logged-in user's write passes RLS
+    // (parent session owned by auth.uid()); guests write as anon to their
+    // null-owned session, unchanged.
+    const supabase = getSupabaseBrowserClient()
     const { error: saveError } = await supabase.from('answers').upsert(
       { session_id: sessionId, question_id: currentQuestion.id, answer_text: transcript.trim() },
       { onConflict: 'session_id,question_id' }
@@ -170,6 +180,17 @@ export default function InterviewPage() {
     }
 
     setIsSaving(false)
+
+    // On the final question, skip the per-question feedback step and go straight
+    // to the full results page. The answer is already saved above, and full
+    // scoring runs on the results page — the instant single-answer feedback
+    // (shown on questions 1..N-1) adds nothing on the last question and was what
+    // forced the user to press "Finish & Get Results" a second time.
+    if (currentIndex === questions.length - 1) {
+      advanceQuestion()
+      return
+    }
+
     setIsEvaluating(true)
 
     try {
@@ -410,11 +431,11 @@ export default function InterviewPage() {
                     onClick={advanceQuestion}
                     className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white font-semibold px-4 py-2 rounded-md shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all text-sm"
                   >
-                    {currentIndex < questions.length - 1 ? (
-                      <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
-                    ) : (
-                      'Finish & Get Results'
-                    )}
+                    {/* The feedback panel only renders on questions 1..N-1 (the
+                        last question skips instant feedback and goes straight to
+                        results), so this button is always "Next Question". */}
+                    Next Question
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               </div>

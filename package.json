@@ -13,6 +13,7 @@
     "@fontsource/archivo": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/source-serif-4": "^5.2.9",
+    "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.102.1",
     "@types/nodemailer": "^8.0.0",
     "@types/uuid": "^10.0.0",

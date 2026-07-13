@@ -2,163 +2,231 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { loadHistory } from '@/lib/history'
-import type { HistoryEntry } from '@/lib/history'
+import { useUser } from '@/lib/useUser'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
+import { NavAuth } from '@/components/auth/NavAuth'
 import { Glass, GlassWordmark, RunbackLogoChip } from '@/app/components/teal-glass'
 
-const TARGET_READINESS = 90
-
-// Real projection from the user's own session history — last up-to-4
-// sessions, points/week from the score delta over elapsed time. Falls back
-// to an honest "not enough data" message instead of the design spec's
-// hardcoded demo numbers (CURRENT_READINESS=78 / WEEKLY_RATE=8) since we
-// have no LinkedIn OAuth or persisted user profile to back a real identity.
-function computeReadinessProjection(history: HistoryEntry[]) {
-  if (history.length < 2) return null
-  const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  const recent = sorted.slice(-4)
-  const first = recent[0]
-  const last = recent[recent.length - 1]
-  const current = Math.round(last.overallScore * 10)
-  const elapsedDays = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (1000 * 60 * 60 * 24)
-  if (elapsedDays < 1) return { current, weeklyRate: null }
-  const weeklyRate = ((last.overallScore - first.overallScore) * 10) / (elapsedDays / 7)
-  return { current, weeklyRate: Math.round(weeklyRate * 10) / 10 }
+type SessionRow = {
+  id: string
+  company: string
+  role: string
+  created_at: string
+  score: number | string | null
 }
 
-export default function Profile() {
-  const [history, setHistory] = useState<HistoryEntry[] | null>(null)
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return ''
+  }
+}
 
-  // Deferred one tick (not set synchronously in the effect body) so this
-  // stays a subscribe-to-external-store read, matching lib/history.ts's
-  // localStorage-hydration pattern used elsewhere in the app.
+export default function ProfilePage() {
+  const { user, loading: authLoading } = useUser()
+  const [sessions, setSessions] = useState<SessionRow[] | null>(null)
+  const [loadError, setLoadError] = useState('')
+  // Phase 4 — the user's saved resume text (null = none / not loaded yet).
+  const [savedResume, setSavedResume] = useState<string | null>(null)
+  const [clearingResume, setClearingResume] = useState(false)
+
   useEffect(() => {
-    const id = setTimeout(() => setHistory(loadHistory()), 0)
-    return () => clearTimeout(id)
-  }, [])
+    if (authLoading) return
+    if (!user) {
+      // Signed out (or signed out mid-session) — clear any prior list so the
+      // guest prompt shows. No redirect, no crash.
+      setSessions(null)
+      setSavedResume(null)
+      setLoadError('')
+      return
+    }
 
-  const projection = history ? computeReadinessProjection(history) : null
-  const daysLeft = projection && projection.weeklyRate && projection.weeklyRate > 0
-    ? Math.round(((TARGET_READINESS - projection.current) / projection.weeklyRate) * 7)
-    : null
+    const uid = user.id
+    let active = true
+    setLoadError('')
+
+    async function load() {
+      const supabase = getSupabaseBrowserClient()
+      // Hydrate the auth session so the JWT is attached and auth.uid() resolves.
+      await supabase.auth.getSession()
+      // RLS also exposes guest (null-owned) rows to everyone, so filter to THIS
+      // user's own sessions explicitly. Reads only.
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, company, role, created_at, score')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+
+      if (!active) return
+      if (error) {
+        setLoadError('Could not load your interviews. Please refresh to try again.')
+        setSessions([])
+      } else {
+        setSessions((data ?? []) as SessionRow[])
+      }
+
+      // Saved resume (Phase 4) — best-effort. A missing resume_text column
+      // (pre-migration) surfaces as an error, which we treat as "no saved
+      // resume" so the section renders cleanly.
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('resume_text')
+        .eq('id', uid)
+        .single()
+      if (!active) return
+      setSavedResume(profErr ? null : ((prof?.resume_text as string | null) ?? null))
+    }
+
+    load()
+    return () => {
+      active = false
+    }
+  }, [user, authLoading])
+
+  const isLoading = authLoading || (!!user && sessions === null && !loadError)
+
+  // Delete the saved resume (explicit user action, own row only).
+  async function handleClearSavedResume() {
+    if (!user || clearingResume) return
+    setClearingResume(true)
+    const supabase = getSupabaseBrowserClient()
+    const { error } = await supabase.from('profiles').update({ resume_text: null }).eq('id', user.id)
+    if (!error) setSavedResume(null)
+    setClearingResume(false)
+  }
 
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-white to-[#F1F4F6] animate-fade-in">
-      <nav className="flex items-center justify-between px-6.5 py-3.5 mx-5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <RunbackLogoChip size={30} />
-          <GlassWordmark className="text-lg" />
-        </Link>
-        <Link href="/dashboard" className="text-[13px] text-ink/70 hover:text-brand transition-colors">← Back</Link>
-      </nav>
+    <div className="min-h-screen flex flex-col animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6]">
+      {/* Header */}
+      <header className="relative z-2">
+        <nav className="max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-3.5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <Link href="/" className="flex items-center gap-2.5">
+            <RunbackLogoChip size={32} />
+            <GlassWordmark className="text-lg" />
+          </Link>
+          <NavAuth />
+        </nav>
+      </header>
 
-      <div className="max-w-[900px] mx-auto px-6 pt-2 pb-12 flex flex-col gap-5">
+      <main className="flex-1 max-w-[1000px] mx-auto w-full px-6 py-10">
+        {/* ===== Your Interviews ===== */}
+        <section>
+          <h1 className="font-serif font-bold text-3xl text-ink tracking-tight">Your Profile</h1>
+          <p className="text-sm text-ink/60 mt-1">Every rep you&apos;ve logged, most recent first.</p>
 
-        {/* Identity card — no auth/profile data model exists yet, so this is
-            an honest generic placeholder rather than a fabricated identity */}
-        <Glass className="rounded-[18px] p-6 flex gap-4.5 items-center">
-          <div className="w-[76px] h-[76px] shrink-0 rounded-full bg-[rgba(31,37,43,0.06)] border border-dashed border-[rgba(31,37,43,0.2)] flex items-center justify-center text-[11px] text-ink/40 text-center leading-tight">
-            Add photo
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-serif text-xl font-bold text-ink">Your Profile</div>
-            <div className="text-[13px] text-ink/60 mt-0.5">
-              <Link href="/login" className="underline hover:text-brand transition-colors">Sign in</Link> to add your name, school, and major
-            </div>
-            <div className="flex items-center gap-2 mt-2.5">
-              <div className="inline-flex items-center gap-1.5 bg-[rgba(10,102,194,0.06)] border border-[rgba(10,102,194,0.2)] rounded-full px-2.5 py-1 opacity-70">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/teal-glass/icons/linkedin.svg" alt="LinkedIn" className="w-3.5 h-3.5" />
-                <span className="text-xs font-semibold text-[#0A66C2]">Not connected</span>
+          <div className="mt-8">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
               </div>
-              <span className="text-xs text-ink/40" title="LinkedIn OAuth isn't built yet">Connect — coming soon</span>
-            </div>
-          </div>
-        </Glass>
-
-        {/* Readiness timeline — real, or an honest fallback */}
-        <Glass className="rounded-[18px] p-6 flex flex-col gap-3.5">
-          <div className="flex justify-between items-baseline">
-            <div className="text-[15px] font-bold text-ink">Interview Readiness Timeline</div>
-            <span className="text-xs text-ink/60">Based on your last {Math.min(4, history?.length ?? 0)} sessions</span>
-          </div>
-
-          {!projection ? (
-            <p className="text-sm text-ink/60">Run at least two mock interviews to see your readiness trend here.</p>
-          ) : (
-            <>
-              <div className="flex items-baseline gap-2">
-                <span className="font-serif text-[34px] font-bold text-brand">{projection.current}</span>
-                <span className="text-sm text-ink/60">/ {TARGET_READINESS} target</span>
-                {projection.weeklyRate !== null && (
-                  <span className="ml-auto text-[13px] font-bold text-brand">
-                    {projection.weeklyRate >= 0 ? '+' : ''}{projection.weeklyRate} pts/week
-                  </span>
-                )}
-              </div>
-              <div className="relative h-2.5 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
-                <div
-                  className="absolute left-0 top-0 bottom-0 bg-brand rounded-full"
-                  style={{ width: `${Math.min(100, (projection.current / TARGET_READINESS) * 100)}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px] text-ink/60">
-                <span>Today</span>
-                <span>Interview-ready</span>
-              </div>
-              <Glass className="rounded-xl px-4 py-3 bg-volt/30 border-[rgba(168,224,221,0.5)] shadow-none">
-                {daysLeft !== null ? (
-                  <>
-                    <span className="text-[13px] font-bold text-brand">At your current pace, you&apos;ll be interview-ready in ~{daysLeft} days</span>
-                    <span className="text-[13px] text-ink/70"> — keep practicing 2–3x a week to stay on track.</span>
-                  </>
-                ) : projection.current >= TARGET_READINESS ? (
-                  <span className="text-[13px] font-bold text-brand">You&apos;re already at or above your readiness target 🎉</span>
-                ) : (
-                  <span className="text-[13px] text-ink/70">Keep practicing to establish a weekly trend — we&apos;ll estimate your readiness date once we have one.</span>
-                )}
+            ) : !user ? (
+              // Guest — sign-in prompt (no hard block, no forced redirect)
+              <Glass className="rounded-[20px] p-8 max-w-xl">
+                <p className="font-serif font-bold text-lg text-ink tracking-tight">Sign in to see your history</p>
+                <p className="text-sm text-ink/60 mt-1.5 leading-relaxed">
+                  Your past mocks and scores live in your account. Sign in to pick up where you left off.
+                </p>
+                <div className="mt-5">
+                  <GoogleSignInButton label="Continue with Google" next="/profile" />
+                </div>
               </Glass>
-            </>
-          )}
-        </Glass>
-
-        {/* Session history — real data from lib/history.ts */}
-        <div>
-          <div className="text-[15px] font-bold text-ink mb-2.5">Recent Sessions</div>
-          {!history || history.length === 0 ? (
-            <Glass className="rounded-[18px] p-6 text-center">
-              <p className="text-sm text-ink/60">No sessions yet.</p>
-              <Link href="/get-started" className="inline-block mt-3 bg-brand hover:bg-brand-hover text-white rounded-[10px] px-5 py-2.5 text-sm font-bold shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all">
-                Start your first mock
-              </Link>
-            </Glass>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              {history.map((s) => (
+            ) : loadError ? (
+              <Glass className="rounded-[20px] p-6 max-w-xl">
+                <p className="text-sm text-red-600">{loadError}</p>
+              </Glass>
+            ) : sessions && sessions.length === 0 ? (
+              // Empty state
+              <Glass className="rounded-[20px] p-10 text-center max-w-xl">
+                <p className="font-serif font-bold text-xl text-ink tracking-tight">No mocks yet — run your first rep</p>
+                <p className="text-sm text-ink/60 mt-1.5">Your interviews will show up here once you finish one.</p>
                 <Link
-                  key={s.sessionId}
-                  href={`/results/${s.sessionId}`}
-                  className="block"
+                  href="/get-started"
+                  className="inline-flex items-center gap-2 mt-6 bg-brand hover:bg-brand-hover text-white font-semibold px-4 py-2 rounded-md text-sm shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all"
                 >
-                  <Glass className="rounded-[18px] px-4.5 py-3.5 flex items-center gap-4 cursor-pointer hover:bg-[rgba(255,255,255,0.7)] transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm text-ink truncate">
-                        {s.company} <span className="text-ink/60 font-normal">· {s.role}</span>
-                      </div>
-                      <div className="text-xs text-ink/50 mt-0.5">
-                        {new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                    </div>
-                    <div className="font-serif text-xl font-bold text-brand shrink-0">
-                      {Math.round(s.overallScore * 10)}<span className="text-xs text-ink/50 font-sans font-medium">/100</span>
-                    </div>
-                  </Glass>
+                  Start a mock
                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+              </Glass>
+            ) : (
+              // List
+              <ul className="flex flex-col gap-3">
+                {(sessions ?? []).map((s) => {
+                  const score = s.score == null ? null : Number(s.score)
+                  return (
+                    <li key={s.id}>
+                      <Link
+                        href={`/results/${s.id}`}
+                        className="group flex items-center gap-4 rounded-xl px-5 py-4 transition-colors bg-[rgba(255,255,255,0.5)] backdrop-blur-[26px] border border-[rgba(255,255,255,0.85)] hover:border-brand shadow-[0_16px_40px_rgba(31,37,43,0.07)]"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-ink font-semibold truncate">
+                            {s.company} <span className="text-ink/60 font-normal">· {s.role}</span>
+                          </p>
+                          <p className="text-xs text-ink/50 mt-0.5">{formatDate(s.created_at)}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {score != null && Number.isFinite(score) ? (
+                            <span className="font-serif font-bold text-2xl text-brand tabular-nums">
+                              {score}
+                              <span className="text-sm text-ink/50 font-sans font-medium">/10</span>
+                            </span>
+                          ) : (
+                            <span className="text-sm text-ink/50">—</span>
+                          )}
+                        </div>
+                        <svg
+                          className="shrink-0 w-4 h-4 text-ink/40 group-hover:text-brand transition-colors"
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        {/* ===== Saved Resume (Phase 4) ===== */}
+        {user && !authLoading && (
+          <section className="mt-12">
+            <h2 className="font-serif font-bold text-xl text-ink tracking-tight">Saved Resume</h2>
+            <p className="text-sm text-ink/60 mt-1">Auto-filled into new mocks so you don&apos;t re-upload each time.</p>
+            <Glass className="mt-5 rounded-[20px] p-6 max-w-2xl">
+              {savedResume && savedResume.trim().length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2 text-emerald-700">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium">Resume saved</span>
+                  </div>
+                  <p className="text-xs text-ink/60 leading-relaxed whitespace-pre-wrap">
+                    {savedResume.slice(0, 200).trim()}{savedResume.length > 200 ? '…' : ''}
+                  </p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleClearSavedResume}
+                      disabled={clearingResume}
+                      className="text-sm text-ink/60 hover:text-red-700 underline decoration-ink/20 hover:decoration-red-500/50 transition-colors disabled:opacity-50"
+                    >
+                      {clearingResume ? 'Clearing…' : 'Clear saved resume'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-ink/60">
+                  No saved resume yet — upload one during your next mock and it&apos;ll be saved here automatically.
+                </p>
+              )}
+            </Glass>
+          </section>
+        )}
+      </main>
+    </div>
   )
 }

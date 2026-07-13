@@ -38,6 +38,16 @@ GitHub admin) and Caroline (question quality / prompt engineering owner).
   handler, not extracted to separate prompt files. This is the existing pattern — follow
   it rather than introducing a new prompt-management abstraction on your own initiative.
 
+## Local Development
+- **Google sign-in on localhost:** to test the auth flow locally, the Supabase
+  dashboard (Authentication → URL Configuration → Redirect URLs) must include
+  `http://localhost:3000/**`. Without it, Supabase ignores the app's `redirectTo`
+  and falls back to the **Site URL** (`https://runback.app`), so after Google
+  consent you land on production instead of back on localhost. Leave Site URL as
+  `https://runback.app` (correct for prod) and keep `https://runback.app/**` in
+  the allowlist too. The app code already sends the right origin — this is a
+  dashboard config, not a code fix.
+
 ## Code Style
 - camelCase for variables/functions, PascalCase for components
 - Tailwind utility classes inline in JSX — no separate CSS modules or styled-components

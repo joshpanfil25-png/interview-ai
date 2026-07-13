@@ -3,15 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Glass, GlassWordmark, PressButton, RunbackLogoChip, TealBlob } from '@/app/components/teal-glass'
+import { NavAuth } from '@/components/auth/NavAuth'
 
 // Links map to real routes where a page exists; the rest are visual-only per
-// the design handoff scope (no Mock Interview/Practice/Resources/Readiness
-// Report pages exist yet) and simply set local active state.
+// the design handoff scope (no Mock Interview/Practice/Readiness Report
+// pages exist yet) and simply set local active state.
 const NAV_LINKS: { label: string; href?: string }[] = [
   { label: 'Home', href: '/' },
   { label: 'Mock Interview' },
   { label: 'Practice' },
-  { label: 'Resources' },
+  { label: 'Resources', href: '/how-it-works' },
   { label: 'Your Profile', href: '/profile' },
   { label: 'Readiness Report' },
 ]
@@ -50,8 +51,8 @@ export default function Marketing() {
             )
           })}
         </div>
-        <div className="flex gap-2.5 items-center shrink-0">
-          <Link href="/login" className="text-sm font-semibold whitespace-nowrap hover:text-brand transition-colors">Log in</Link>
+        <div className="flex gap-3 items-center shrink-0">
+          <NavAuth />
           <PressButton primary href="/get-started" className="px-4.5 py-2.5">Get Started</PressButton>
         </div>
       </nav>
@@ -102,7 +103,7 @@ export default function Marketing() {
             <div className="text-[13px] text-ink/70 leading-relaxed mt-1.5 max-w-[260px]">Practice real-world questions with an AI interviewer that adapts to your target role.</div>
           </div>
           <div className="h-px bg-[rgba(31,37,43,0.08)]" />
-          <Link href="/get-started" className="text-xs text-brand font-bold">See how it works ▸</Link>
+          <Link href="/how-it-works" className="text-xs text-brand font-bold">See how it works ▸</Link>
         </Glass>
         <Glass className="rounded-[18px] p-5 flex flex-col gap-1.5 cursor-pointer hover:-translate-y-[3px] transition-transform">
           <div className="w-[26px] h-[26px] rounded-[7px] bg-volt/60" />

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { getSupabaseClient } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// Full end-of-interview evaluation is one opus call with adaptive thinking over the
-// whole transcript — give it headroom above the platform default to avoid 504/truncation.
+// Full end-of-interview evaluation is one Opus call over the whole transcript.
+// Runs without extended thinking (see the model call below), so it completes well
+// within the platform's default function limit.
 export const maxDuration = 60
 
 export type StarRating = 'present' | 'weak' | 'missing'
@@ -54,7 +55,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the Supabase client at request time (never at module/build time).
-    const supabase = getSupabaseClient()
+    // Use the cookie-aware SSR client so a logged-in user's session (sent with
+    // this same-origin fetch) resolves auth.uid() and RLS returns their owned
+    // rows. Guests send no cookie → behaves as anon → null-owned rows visible,
+    // exactly as before.
+    const supabase = await createSupabaseServerClient()
 
     // Fetch questions
     const { data: questions, error: qError } = await supabase
@@ -89,7 +94,14 @@ ${qaPairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).j
 
 For each answer, do two things:
 
-1. Score it 1-10 for: Clarity, Confidence, Structure, and Relevance.
+1. Score it 0-10 for: Clarity, Confidence, Structure, and Relevance. Scoring floor: if an answer is empty, a single stray character, gibberish, or does not genuinely attempt to answer the question, score all four components 0 — do not award points for effort that is not there, regardless of the encouraging tone.
+
+   Score each dimension against this rubric, not a gut feeling:
+   - Clarity — is the point easy to follow and does the answer lead with it, or is it buried, rambling, or hard to parse?
+   - Confidence — does the language read as decisive and grounded (owns "I", commits to a position), or hedged, vague, and uncertain?
+   - Structure — does the answer follow a recognizable shape (STAR for behavioral, a clear framework or logical progression for technical/case), or does it wander?
+   - Relevance — does it actually answer the question asked with concrete substance (specific numbers, names, mechanisms, examples), or is it generic filler or off-topic?
+   Calibrate the number to the evidence: 8-10 = strong (specific, well-structured, directly on-point); 5-7 = solid but with real gaps; 2-4 = weak, vague, or only partially responsive; 0-1 = essentially no genuine attempt. Do not cluster every answer in the 6-8 band — spread scores to reflect real differences.
 
 2. Analyze whether the answer uses the STAR method (Situation, Task, Action, Result). For each of the four components, rate it as:
    - "present" — clearly and specifically addressed
@@ -127,21 +139,31 @@ Return ONLY a valid JSON object with no extra text:
   "exampleBetterAnswer": "A detailed example of how to answer one of the weakest questions better"
 }`
 
+    // One Opus call over the whole transcript, no extended thinking — same shape
+    // as the other Opus routes here (generate-questions, rewrite-resume,
+    // grade-resume). The original bug: this route uniquely enabled adaptive
+    // thinking, which shares the max_tokens budget with the output, so long
+    // reasoning could leave no room for the JSON → empty text block → "No
+    // response" (500). Running without thinking gives the full budget to the
+    // evaluation JSON and removes the starvation entirely.
     const response = await client.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 4096,
-      thinking: { type: 'adaptive' },
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const textBlock = response.content.find((b) => b.type === 'text')
-    if (!textBlock || textBlock.type !== 'text') {
+    const evaluationText = response.content
+      .map((b) => (b.type === 'text' ? b.text : ''))
+      .join('')
+      .trim()
+
+    if (!evaluationText) {
       throw new Error('No response from Runback')
     }
 
     let parsed: any
     try {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/)
+      const jsonMatch = evaluationText.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('No JSON found')
       parsed = JSON.parse(jsonMatch[0])
     } catch {

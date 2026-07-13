@@ -1,33 +1,76 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { v4 as uuidv4 } from 'uuid'
+import { loadHistory } from '@/lib/history'
+import type { HistoryEntry } from '@/lib/history'
 import type { ResumeGrade } from '@/app/api/grade-resume/route'
 import type { ResumeRewriteGuide } from '@/app/api/rewrite-resume/route'
 import type { LinkedInReview } from '@/app/api/review-linkedin/route'
+import { NavAuth } from '@/components/auth/NavAuth'
+import { useUser } from '@/lib/useUser'
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { Glass, GlassWordmark, RunbackLogoChip, TealBlob } from '@/app/components/teal-glass'
 
+// Order groups related verticals so the (now long) dropdown stays scannable.
+// Every entry here must have a matching key in `verticalGuidance` in
+// app/api/generate-questions/route.ts, and school-admissions entries must also
+// be listed in SCHOOL_VERTICALS below (and in the route).
 const INTERVIEW_TYPES = [
   'General',
+  // Business, finance & professional services
   'Finance',
-  'Consulting',
-  'Tech',
   'Investment Banking',
   'Private Equity',
-  'Real Estate',
-  'Marketing',
-  'Sales',
-  'Healthcare',
+  'Actuarial / Quant',
+  'Consulting',
   'Accounting',
   'Audit',
-  'Operations',
+  'Real Estate',
+  // Product, engineering, data & design
+  'Tech',
+  'Software Engineering',
+  'Engineering (Non-Software)',
+  'Product Management',
+  'Project / Program Management',
+  'Data / Analytics',
+  'Design (UX / Product)',
+  'Cybersecurity',
+  // Go-to-market, people & operations
+  'Marketing',
+  'Sales',
+  'Customer Success',
+  'Media / Journalism / PR',
   'Human Resources',
-  'Nonprofit',
+  'Operations',
+  // Public sector, mission & service
   'Government',
+  'Nonprofit',
+  'Law / Legal',
+  'Healthcare',
+  'Nursing',
+  'Medical Residency / Fellowship',
+  'Social Work / Counseling',
+  'Teaching / Education',
+  'Aviation / Pilot',
+  'Skilled Trades',
+  'Retail / Hospitality',
+  'Hospitality & Culinary Management',
+  'Criminal Justice / Law Enforcement',
+  // Arts, environment & the built world
+  'Architecture / Urban Planning',
+  'Fine & Performing Arts',
+  'Environmental & Sustainability',
+  // Founders & academia
+  'Startup / Founder / VC',
+  'Academia / Faculty',
+  // School admissions (swaps Company/Role labels to School/Program)
   'Pre-Med / Health Professional School',
+  'Pharmacy / Dental / Vet / PT School',
   'Pre-Law / Law School',
+  'Business School / MBA',
   'Graduate School (General)',
   'Coffee Chat',
 ]
@@ -39,16 +82,29 @@ const SCHOOL_VERTICALS = new Set([
   'Pre-Med / Health Professional School',
   'Pre-Law / Law School',
   'Graduate School (General)',
+  'Business School / MBA',
+  'Pharmacy / Dental / Vet / PT School',
 ])
 
 const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const
 const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'] as const
+
+// Minimum number of extracted characters we treat as a usable resume. Below
+// this we assume extraction failed (e.g. a scanned / image-only PDF with no
+// text layer, or stray page-number noise) rather than a real resume.
+// Tunable — revisit against real user data if we see false positives/negatives.
+const MIN_RESUME_CHARS = 40
+
+function hasUsableText(text: string): boolean {
+  return text.trim().length >= MIN_RESUME_CHARS
+}
 
 const fieldClass =
   'w-full bg-[rgba(255,255,255,0.7)] border border-[rgba(31,37,43,0.14)] rounded-[10px] px-3.5 py-2.5 text-[14.5px] text-ink placeholder-[rgba(10,10,10,0.4)] focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors'
 
 export default function GetStarted() {
   const router = useRouter()
+  const { user } = useUser()
   const [interviewType, setInterviewType] = useState('General')
   const [questionFocus, setQuestionFocus] = useState<(typeof QUESTION_FOCUS_OPTIONS)[number]>('Balanced')
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTY_OPTIONS)[number]>('Medium')
@@ -60,10 +116,21 @@ export default function GetStarted() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [resumeText, setResumeText] = useState('')
   const [fileName, setFileName] = useState('')
+  // Resume parse feedback, kept separate from the form-validation `error` line.
+  const [resumeNotice, setResumeNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [showManualPaste, setShowManualPaste] = useState(false)
+  // Phase 4: true when the resume field was auto-filled from the logged-in
+  // user's saved resume (drives the "Using your saved resume" indicator). Any
+  // upload/paste/clear flips it off — they've overridden for this session.
+  const [usingSavedResume, setUsingSavedResume] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Guards the one-shot saved-resume auto-fill: once the user uploads, pastes,
+  // or clears, we never overwrite their choice with the saved resume.
+  const resumeTouchedRef = useRef(false)
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null)
 
   // Resume grader state
   const [resumeGrade, setResumeGrade] = useState<ResumeGrade | null>(null)
@@ -83,6 +150,42 @@ export default function GetStarted() {
   const [isReviewingLinkedin, setIsReviewingLinkedin] = useState(false)
   const [linkedinReviewOpen, setLinkedinReviewOpen] = useState(false)
   const [linkedinReviewError, setLinkedinReviewError] = useState('')
+
+  // Hydrate from localStorage after mount (avoids SSR mismatch)
+  useEffect(() => {
+    setHistory(loadHistory().slice(0, 5))
+  }, [])
+
+  // Phase 4 — auto-fill a logged-in user's saved resume. Only prefills an
+  // untouched field (nothing uploaded/pasted/cleared yet), so it never clobbers
+  // an in-progress upload. Guests and users without a saved resume are
+  // unaffected. Resilient to the resume_text column not existing yet
+  // (pre-migration): any error is treated as "no saved resume".
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    ;(async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('resume_text')
+          .eq('id', user.id)
+          .single()
+        if (!active || error) return
+        const saved = data?.resume_text
+        if (!saved || !hasUsableText(saved)) return
+        if (resumeTouchedRef.current) return // user already provided/cleared one
+        setResumeText(saved)
+        setUsingSavedResume(true)
+      } catch {
+        /* no saved resume / column missing — leave the empty flow untouched */
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [user])
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const pdfjsLib = await import('pdfjs-dist')
@@ -108,26 +211,85 @@ export default function GetStarted() {
   }
 
   const handleFile = async (file: File) => {
+    // Any upload overrides an auto-filled saved resume for this session.
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
     if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file.')
+      setResumeNotice({ type: 'error', msg: 'That file isn’t a PDF. Upload a PDF resume, or paste your resume text instead.' })
+      setShowManualPaste(true)
       return
     }
-    setFileName(file.name)
-    setError('')
-    // Reset analysis state when a new file is loaded
+    // Clear prior resume + analysis state before parsing the new file so no
+    // stale success/checkmark survives a failed parse.
+    setResumeText('')
+    setFileName('')
+    setResumeNotice(null)
+    resetAnalysisState()
+    try {
+      const text = await extractTextFromPdf(file)
+      if (!hasUsableText(text)) {
+        // pdfjs succeeded but found no usable text — almost always a scanned /
+        // image-based PDF with no text layer. Do NOT store the junk, and do NOT
+        // show a success checkmark.
+        setResumeNotice({
+          type: 'error',
+          msg: 'We couldn’t read any text from this PDF — it looks scanned or image-based. Paste your resume text below instead.',
+        })
+        setShowManualPaste(true)
+        return
+      }
+      setFileName(file.name)
+      setResumeText(text)
+      setResumeNotice({ type: 'success', msg: 'Resume loaded — we’ll tailor your questions to it.' })
+    } catch (err) {
+      console.error('PDF extraction error:', err)
+      setResumeNotice({
+        type: 'error',
+        msg: 'We couldn’t read this PDF — it may be corrupted or password-protected. Paste your resume text below instead.',
+      })
+      setShowManualPaste(true)
+    }
+  }
+
+  // Reset resume-analysis (grade + rewrite) state whenever the resume changes.
+  const resetAnalysisState = () => {
     setResumeGrade(null)
     setGradeOpen(false)
     setGradeError('')
     setRewriteGuide(null)
     setRewriteOpen(false)
     setRewriteError('')
-    try {
-      const text = await extractTextFromPdf(file)
-      setResumeText(text)
-    } catch (err) {
-      console.error('PDF extraction error:', err)
-      setError('Failed to extract text from PDF. Please try another file.')
+  }
+
+  // Manual paste — converges on the same resumeText + usable-text check as PDF.
+  const handleManualResumeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
+    setResumeText(text)
+    setFileName('') // typed text supersedes any uploaded file
+    resetAnalysisState()
+    if (hasUsableText(text)) {
+      setResumeNotice({ type: 'success', msg: 'Resume text added — we’ll tailor your questions to it.' })
+    } else {
+      // Don't nag mid-type; the submit guard enforces usability on submit.
+      setResumeNotice(null)
     }
+  }
+
+  // Clear resume entirely — lets the user proceed with no resume after a failed
+  // parse. Session-level only: this does NOT delete a saved resume (submitting
+  // with an empty field skips the save-upsert below). The saved copy is removed
+  // only from /profile.
+  const clearResume = () => {
+    resumeTouchedRef.current = true
+    setUsingSavedResume(false)
+    setResumeText('')
+    setFileName('')
+    setResumeNotice(null)
+    setShowManualPaste(false)
+    resetAnalysisState()
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleGradeResume = async () => {
@@ -233,6 +395,16 @@ export default function GetStarted() {
       return
     }
 
+    // A resume is optional, but if the user attempted to provide one (failed
+    // parse still showing, or unusable pasted text) don't silently send empty
+    // context to question generation — make them fix it or clear it.
+    const resumeAttempted = resumeNotice?.type === 'error' || resumeText.trim().length > 0
+    if (resumeAttempted && !hasUsableText(resumeText)) {
+      setError('We couldn’t read your resume. Paste your resume text, or clear it to continue without one.')
+      setShowManualPaste(true)
+      return
+    }
+
     setIsLoading(true)
     setError('')
 
@@ -243,6 +415,18 @@ export default function GetStarted() {
         `session_meta_${sessionId}`,
         JSON.stringify({ company, role, interviewType, questionFocus, difficulty, firstName, email })
       )
+
+      // Phase 4 — persist this resume to the logged-in user's profile so it
+      // auto-fills next time. Guests (user null) write nothing. The submit guard
+      // above already ensured resumeText is empty or usable, and hasUsableText
+      // re-checks here so an empty field never overwrites a saved resume.
+      // Fire-and-forget: never blocks starting the mock, errors swallowed.
+      if (user && hasUsableText(resumeText)) {
+        getSupabaseBrowserClient()
+          .from('profiles')
+          .upsert({ id: user.id, resume_text: resumeText }, { onConflict: 'id' })
+          .then(() => {}, () => {})
+      }
 
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
@@ -282,10 +466,13 @@ export default function GetStarted() {
       <TealBlob className="w-[380px] h-[380px] -top-36 -right-40 bg-gradient-to-br from-[rgba(168,224,221,0.3)] to-[rgba(13,95,99,0.05)]" />
 
       <div className="relative z-2 max-w-[640px] mx-auto px-6 py-10 flex flex-col gap-5">
-        <Link href="/" className="flex items-center gap-2.5 w-fit">
-          <RunbackLogoChip size={32} />
-          <GlassWordmark className="text-lg" />
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <RunbackLogoChip size={32} />
+            <GlassWordmark className="text-lg" />
+          </Link>
+          <NavAuth />
+        </div>
 
         <div>
           <h1 className="font-serif text-[26px] font-bold text-ink">Set up your session</h1>
@@ -452,8 +639,71 @@ export default function GetStarted() {
                 )}
               </div>
 
-              {/* Resume tools — appear once a file is loaded */}
-              {resumeText && (
+              {/* Phase 4 — saved-resume indicator (logged-in users with a saved resume) */}
+              {usingSavedResume && (
+                <div className="flex items-start gap-3 rounded-md px-3 py-2.5 text-xs bg-brand/[0.08] border border-brand/25 text-brand">
+                  <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="leading-relaxed flex-1">
+                    Using your saved resume. Upload or paste a different one to replace it, or clear it for this session.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearResume}
+                    className="shrink-0 underline decoration-brand/40 hover:decoration-brand text-brand/90 hover:text-brand transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+
+              {/* Resume parse notice — distinct from the form-validation error line */}
+              {resumeNotice && (
+                <div
+                  className={`flex items-start gap-3 rounded-md px-3 py-2.5 text-xs ${
+                    resumeNotice.type === 'error'
+                      ? 'bg-red-500/[0.06] border border-red-500/20 text-red-700'
+                      : 'bg-emerald-500/[0.06] border border-emerald-500/20 text-emerald-700'
+                  }`}
+                >
+                  <span className="leading-relaxed flex-1">{resumeNotice.msg}</span>
+                  {resumeNotice.type === 'error' && (
+                    <button
+                      type="button"
+                      onClick={clearResume}
+                      className="shrink-0 underline decoration-red-400/40 hover:decoration-red-500 text-red-700/80 hover:text-red-800 transition-colors"
+                    >
+                      Continue without
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Manual paste fallback — always available via toggle, auto-revealed on parse failure */}
+              {!showManualPaste ? (
+                <button
+                  type="button"
+                  onClick={() => setShowManualPaste(true)}
+                  className="self-start text-xs text-ink/50 hover:text-brand underline decoration-ink/20 hover:decoration-brand transition-colors"
+                >
+                  Or paste it manually instead
+                </button>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-ink/50">Paste your resume text</label>
+                  <textarea
+                    value={fileName ? '' : resumeText}
+                    onChange={handleManualResumeChange}
+                    rows={6}
+                    placeholder="Paste the full text of your resume here…"
+                    className={`${fieldClass} resize-y`}
+                  />
+                </div>
+              )}
+
+              {/* Resume tools — appear only once we have usable resume text */}
+              {hasUsableText(resumeText) && (
                 <div className="border border-[rgba(31,37,43,0.08)] rounded-xl overflow-hidden divide-y divide-[rgba(31,37,43,0.06)]">
 
                   {/* ── Grade panel ─────────────────────────────── */}
@@ -795,6 +1045,123 @@ export default function GetStarted() {
             </button>
           </form>
         </Glass>
+
+        {/* Past Interviews (local, this-device history) */}
+        {history && history.length > 0 && (() => {
+          const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          const n = sorted.length
+          const VW = 480, VH = 160, PL = 38, PR = 12, PT = 16, PB = 30
+          const plotW = VW - PL - PR
+          const plotH = VH - PT - PB
+          const xFor = (i: number) => n === 1 ? PL + plotW / 2 : PL + (i / (n - 1)) * plotW
+          const yFor = (score: number) => PT + (1 - (score * 10) / 100) * plotH
+          const points = sorted.map((e, i) => ({ x: xFor(i), y: yFor(e.overallScore), score: Math.round(e.overallScore * 10), entry: e }))
+          const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+          const areaPath = n > 1
+            ? `${linePath} L ${points[n-1].x.toFixed(1)} ${(PT + plotH).toFixed(1)} L ${points[0].x.toFixed(1)} ${(PT + plotH).toFixed(1)} Z`
+            : ''
+          const gridScores = [0, 25, 50, 75, 100]
+          const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+          return (
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-ink/60 uppercase tracking-wider">Score Progression</h2>
+                <span className="text-xs text-ink/40">{n} session{n !== 1 ? 's' : ''}</span>
+              </div>
+
+              <Glass className="rounded-xl p-4">
+                <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" style={{ height: 160 }} aria-label="Score progression chart">
+                  {gridScores.map(s => {
+                    const y = PT + (1 - s / 100) * plotH
+                    return (
+                      <g key={s}>
+                        <line x1={PL} y1={y} x2={VW - PR} y2={y} stroke="rgba(31,37,43,0.1)" strokeWidth="1" />
+                        <text x={PL - 5} y={y + 3.5} textAnchor="end" fontSize="9" fill="rgba(31,37,43,0.4)">{s}</text>
+                      </g>
+                    )
+                  })}
+                  {n > 1 && <path d={areaPath} fill="#0D5F63" fillOpacity="0.08" />}
+                  {n > 1 && <path d={linePath} fill="none" stroke="#0D5F63" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+                  {points.map((p, i) => {
+                    const scoreColor = p.score >= 80 ? '#16a34a' : p.score >= 60 ? '#ca8a04' : '#dc2626'
+                    const labelAnchor = n === 1 ? 'middle' : i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'
+                    return (
+                      <g key={p.entry.sessionId}>
+                        <text x={p.x} y={p.y - 9} textAnchor="middle" fontSize="9.5" fontWeight="600" fill={scoreColor}>{p.score}</text>
+                        <circle cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#0D5F63" strokeWidth="2" />
+                        <circle cx={p.x} cy={p.y} r="2" fill={scoreColor} />
+                        <text x={p.x} y={VH - 4} textAnchor={labelAnchor} fontSize="9" fill="rgba(31,37,43,0.5)">{fmtDate(p.entry.date)}</text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              </Glass>
+
+              <div className="flex flex-col gap-3">
+                {history.map((entry) => {
+                  const scoreColor = entry.overallScore >= 8 ? 'text-green-600' : entry.overallScore >= 6 ? 'text-yellow-600' : 'text-red-600'
+                  const dims = [
+                    { label: 'Clarity',    val: entry.scores.clarity },
+                    { label: 'Confidence', val: entry.scores.confidence },
+                    { label: 'Structure',  val: entry.scores.structure },
+                    { label: 'Relevance',  val: entry.scores.relevance },
+                  ]
+                  return (
+                    <Glass
+                      key={entry.sessionId}
+                      className="rounded-xl p-4 cursor-pointer hover:bg-[rgba(255,255,255,0.7)] transition-colors"
+                    >
+                      <div onClick={() => router.push(`/results/${entry.sessionId}`)}>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <p className="text-sm font-semibold text-ink truncate">{entry.company}</p>
+                              <span className="text-ink/40 text-sm">·</span>
+                              <p className="text-sm text-ink/60 truncate">{entry.role}</p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
+                                {entry.interviewType}
+                              </span>
+                              <span className="text-xs text-ink/40">{new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              {entry.fillerCount > 0 && (
+                                <span className="text-xs text-yellow-700/80">{entry.fillerCount} filler{entry.fillerCount !== 1 ? 's' : ''}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0">
+                            <div className="flex items-baseline gap-0.5">
+                              <span className={`text-2xl font-bold tabular-nums ${scoreColor}`}>{entry.overallScore}</span>
+                              <span className="text-xs text-ink/40">/10</span>
+                            </div>
+                            <span className="text-xs text-ink/40">View →</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                          {dims.map(({ label, val }) => (
+                            <div key={label}>
+                              <div className="flex justify-between text-xs mb-0.5">
+                                <span className="text-ink/40">{label}</span>
+                                <span className="text-ink/50 tabular-nums">{val}</span>
+                              </div>
+                              <div className="h-1 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${val * 10}%`, background: val >= 8 ? '#22c55e' : val >= 6 ? '#eab308' : '#ef4444' }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Glass>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
       </div>
     </main>
   )

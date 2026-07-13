@@ -2,8 +2,13 @@
 
 @theme {
   /* Runback brand tokens — "Teal Glass" rebrand */
-  --color-cream: #F5F1E8;
-  --color-blacktop: #121212;
+  /* Legacy dark-theme text tokens, aliased for the light theme: cream was
+     "light text on dark bg" (now dark ink on light bg); blacktop was "dark
+     text for contrast on the bright brand color" (brand is now a dark teal,
+     so it needs white text instead). Kept as aliases rather than rewriting
+     every call site across both branches' files. */
+  --color-cream: #0A0A0A;
+  --color-blacktop: #FFFFFF;
   --color-brand: #0D5F63;        /* Carbon Teal — primary/actions */
   --color-brand-hover: #0A4A4D;
   --color-volt: #A8E0DD;         /* Sea Glass — light accent, was Volt */

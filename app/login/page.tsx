@@ -1,10 +1,8 @@
 'use client'
 
 import { Glass, GlassWordmark, TealBlob } from '@/app/components/teal-glass'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 
-// No Google OAuth exists in this codebase yet (no components/auth, no
-// lib/authActions) — the button below is an honest non-functional
-// placeholder for that not-yet-built feature, not a fake sign-in flow.
 export default function Login() {
   return (
     <main className="relative min-h-screen overflow-hidden animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6] flex items-center justify-center px-6">
@@ -27,16 +25,11 @@ export default function Login() {
           </p>
         </div>
 
-        <button
-          type="button"
-          disabled
-          title="Google sign-in isn't wired up yet — coming soon"
-          className="w-full flex items-center justify-center gap-2.5 bg-white text-[#1f1f1f] border border-[rgba(31,37,43,0.14)] rounded-[10px] px-4.5 py-3.5 text-[15px] font-semibold shadow-[0_4px_12px_rgba(31,37,43,0.06)] opacity-60 cursor-not-allowed"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/teal-glass/icons/google-g.svg" alt="" className="w-[18px] h-[18px]" />
-          Continue with Google — coming soon
-        </button>
+        <GoogleSignInButton
+          label="Continue with Google"
+          next="/dashboard"
+          className="w-full !rounded-[10px] !py-3.5 !text-[15px] shadow-[0_4px_12px_rgba(31,37,43,0.06)]"
+        />
 
         <div className="flex items-center gap-2.5 w-full">
           <div className="flex-1 h-px bg-[rgba(31,37,43,0.1)]" />

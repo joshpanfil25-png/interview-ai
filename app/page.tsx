@@ -6,12 +6,14 @@ import { Glass, GlassWordmark, PressButton, RunbackLogoChip, TealBlob } from '@/
 import { NavAuth } from '@/components/auth/NavAuth'
 
 // Nav shows only tabs that route to a live page today. The design-handoff
-// placeholders (Mock Interview, Practice, Readiness Report) had no real pages,
-// and Resources → /how-it-works is being held back with them for now — all
-// removed until they're real features, then add them back here. The Get
+// placeholders (Mock Interview, Practice, Readiness Report) had no real pages
+// and are removed until they're real features — add them back here when they
+// ship. There is no separate "Resources" page: that label was an alias for
+// /how-it-works, so it's folded into the single "How it works" tab. The Get
 // Started / Sign in CTAs live in the nav's right section, not this list.
 const NAV_LINKS: { label: string; href?: string }[] = [
   { label: 'Home', href: '/' },
+  { label: 'How it works', href: '/how-it-works' },
   { label: 'Your Profile', href: '/profile' },
 ]
 

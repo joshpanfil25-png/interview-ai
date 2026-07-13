@@ -4,15 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { countFillers, rankFillers } from '@/lib/fillerWords'
-
-function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
-      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
-    </svg>
-  )
-}
+import { GlassWordmark, RunbackLogoChip } from '@/app/components/teal-glass'
 
 type Question = {
   id: string
@@ -236,7 +228,7 @@ export default function InterviewPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center max-w-md">
-          <p className="text-red-400 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => router.push('/')}
             className="bg-brand-hover hover:bg-brand text-white text-sm px-5 py-2 rounded-md font-medium transition-colors"
@@ -260,41 +252,39 @@ export default function InterviewPage() {
     curveball: 'Curveball',
   }
   const typeColors: Record<string, string> = {
-    behavioral: 'bg-blue-500/20 text-blue-300',
-    'role-specific': 'bg-purple-500/20 text-purple-300',
-    curveball: 'bg-orange-500/20 text-orange-300',
+    behavioral: 'bg-blue-500/10 text-blue-700',
+    'role-specific': 'bg-purple-500/10 text-purple-700',
+    curveball: 'bg-orange-500/10 text-orange-700',
   }
 
   // ── Main interview screen ────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col relative animate-fade-in overflow-x-clip">
+    <div className="min-h-screen flex flex-col relative animate-fade-in overflow-x-clip bg-gradient-to-b from-white to-[#F1F4F6]">
       {/* Evaluating overlay */}
       {isEvaluating && (
-        <div className="absolute inset-0 z-50 bg-surface-inset/85 backdrop-blur-[2px] flex items-center justify-center">
+        <div className="absolute inset-0 z-50 bg-white/85 backdrop-blur-[2px] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-ink-muted">Evaluating your response…</p>
+            <p className="text-sm text-ink/70">Evaluating your response…</p>
           </div>
         </div>
       )}
       {/* Top bar */}
-      <div className="bg-surface-inset border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
+      <div className="bg-[rgba(255,255,255,0.6)] backdrop-blur-[12px] border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-brand flex items-center justify-center">
-            <LogoMark className="w-4 h-4 text-blacktop" />
-          </div>
-          <span className="font-display font-semibold text-cream text-sm">runback</span>
+          <RunbackLogoChip size={28} />
+          <GlassWordmark className="text-sm" />
         </div>
-        <span className="text-volt bg-volt/10 px-2.5 py-1 rounded-md text-xs font-semibold">● LIVE</span>
+        <span className="text-brand bg-brand/10 px-2.5 py-1 rounded-md text-xs font-semibold">● LIVE</span>
       </div>
 
       <div className="flex flex-col lg:flex-row flex-1 gap-0 lg:overflow-hidden">
         {/* Webcam sidebar */}
-        <div className="w-full lg:w-72 bg-surface-inset border-b lg:border-b-0 lg:border-r border-white/[0.08] flex flex-col items-center justify-start p-4 gap-3">
+        <div className="w-full lg:w-72 bg-[rgba(255,255,255,0.4)] border-b lg:border-b-0 lg:border-r border-[rgba(31,37,43,0.08)] flex flex-col items-center justify-start p-4 gap-3">
           <div className="w-full max-w-[260px] lg:max-w-none aspect-video bg-surface-inset rounded-lg overflow-hidden relative">
             {webcamError ? (
               <div className="absolute inset-0 flex items-center justify-center text-center p-3">
-                <p className="text-ink-muted text-xs">{webcamError}</p>
+                <p className="text-ink/70 text-xs">{webcamError}</p>
               </div>
             ) : (
               <video
@@ -310,7 +300,7 @@ export default function InterviewPage() {
               </div>
             )}
           </div>
-          <p className="text-xs text-ink-muted text-center">Your camera feed (not recorded)</p>
+          <p className="text-xs text-ink/60 text-center">Your camera feed (not recorded)</p>
         </div>
 
         {/* Main content */}
@@ -320,12 +310,12 @@ export default function InterviewPage() {
             {/* Progress */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-cream">
+                <span className="text-sm font-semibold text-ink">
                   Question {currentIndex + 1} of {questions.length}
                 </span>
-                <span className="text-sm text-ink-muted">{Math.round(progress)}% complete</span>
+                <span className="text-sm text-ink/60">{Math.round(progress)}% complete</span>
               </div>
-              <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className="h-1.5 bg-[rgba(31,37,43,0.08)] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
@@ -336,7 +326,7 @@ export default function InterviewPage() {
                   <div
                     key={i}
                     className={`h-1 flex-1 mx-0.5 rounded-full transition-colors ${
-                      i < currentIndex ? 'bg-brand' : i === currentIndex ? 'bg-brand/80' : 'bg-white/[0.08]'
+                      i < currentIndex ? 'bg-brand' : i === currentIndex ? 'bg-brand/80' : 'bg-[rgba(31,37,43,0.1)]'
                     }`}
                   />
                 ))}
@@ -345,70 +335,70 @@ export default function InterviewPage() {
 
             {/* Badge + timer row */}
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeColors[currentQuestion?.question_type] || 'bg-gray-700 text-gray-300'}`}>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeColors[currentQuestion?.question_type] || 'bg-[rgba(31,37,43,0.08)] text-ink/60'}`}>
                 {typeLabels[currentQuestion?.question_type] || currentQuestion?.question_type}
               </span>
 
               <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors duration-300 ${
-                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-surface border-white/[0.08]'
+                timerExpired || isWarning ? 'bg-red-500/10 border-red-500/30' : 'bg-surface border-[rgba(31,37,43,0.08)]'
               }`}>
                 <svg
-                  className={`w-3.5 h-3.5 shrink-0 ${timerExpired || isWarning ? 'text-red-400' : 'text-ink-muted'}`}
+                  className={`w-3.5 h-3.5 shrink-0 ${timerExpired || isWarning ? 'text-red-600' : 'text-ink/60'}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className={`text-sm font-mono font-semibold tabular-nums ${timerExpired || isWarning ? 'text-red-400' : 'text-gray-300'}`}>
+                <span className={`text-sm font-mono font-semibold tabular-nums ${timerExpired || isWarning ? 'text-red-600' : 'text-ink/70'}`}>
                   {timerDisplay}
                 </span>
               </div>
             </div>
 
             {/* Question text */}
-            <div className="relative bg-surface border border-line rounded-2xl p-5 sm:p-6 overflow-hidden">
+            <div className="relative bg-surface border border-line rounded-2xl p-5 sm:p-6 overflow-hidden shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
               {/* Top accent bar */}
-              <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg,#FF5A1F,#D9FF3F)' }} />
-              <p className="text-2xl font-semibold text-cream leading-relaxed tracking-tight break-words">
+              <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg,#0D5F63,#A8E0DD)' }} />
+              <p className="font-serif text-2xl font-semibold text-ink leading-relaxed tracking-tight break-words">
                 {currentQuestion?.question_text}
               </p>
             </div>
 
             {/* Time's up warning */}
             {timerExpired && (
-              <div className="flex items-center gap-2.5 bg-red-500/[0.08] border border-red-500/20 rounded-md px-4 py-3">
-                <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-2.5 bg-red-500/[0.06] border border-red-500/20 rounded-md px-4 py-3">
+                <svg className="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="text-red-300 text-sm">Time&apos;s up — wrap up your answer and move on when you&apos;re ready.</p>
+                <p className="text-red-700 text-sm">Time&apos;s up — wrap up your answer and move on when you&apos;re ready.</p>
               </div>
             )}
 
             {/* Feedback panel or answer controls */}
             {feedback ? (
-              <div className="bg-surface border border-white/[0.08] rounded-xl p-5 sm:p-6 flex flex-col gap-5">
+              <div className="bg-surface border border-[rgba(31,37,43,0.08)] rounded-xl p-5 sm:p-6 flex flex-col gap-5 shadow-[0_16px_40px_rgba(31,37,43,0.07)]">
                 {/* Score */}
                 <div className="flex items-center gap-3">
-                  <span className="font-display font-black text-5xl text-volt tabular-nums">{feedback.score}</span>
-                  <span className="text-xl text-ink-muted font-medium">/&thinsp;10</span>
+                  <span className="font-serif font-bold text-5xl text-brand tabular-nums">{feedback.score}</span>
+                  <span className="text-xl text-ink/60 font-medium">/&thinsp;10</span>
                 </div>
 
                 {/* What they did well */}
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-green-400">What you did well</p>
-                  <p className="text-sm text-gray-200 leading-relaxed">{feedback.didWell}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-green-700">What you did well</p>
+                  <p className="text-sm text-ink/80 leading-relaxed">{feedback.didWell}</p>
                 </div>
 
                 {/* One thing to improve */}
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">One thing to improve</p>
-                  <p className="text-sm text-gray-200 leading-relaxed">{feedback.improve}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">One thing to improve</p>
+                  <p className="text-sm text-ink/80 leading-relaxed">{feedback.improve}</p>
                 </div>
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap items-center gap-3 gap-y-3 pt-1">
                   <button
                     onClick={handleTryAgain}
-                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm bg-[rgba(31,37,43,0.04)] hover:bg-[rgba(31,37,43,0.08)] border border-[rgba(31,37,43,0.1)] text-ink/80 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -418,7 +408,7 @@ export default function InterviewPage() {
                   <div className="flex-1" />
                   <button
                     onClick={advanceQuestion}
-                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-blacktop font-semibold px-4 py-2 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
+                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white font-semibold px-4 py-2 rounded-md shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all text-sm"
                   >
                     {currentIndex < questions.length - 1 ? (
                       <>Next Question<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></>
@@ -432,16 +422,16 @@ export default function InterviewPage() {
               <>
                 {/* Answer textarea */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-[13px] font-medium text-ink-muted">Your Answer</label>
+                  <label className="text-[13px] font-medium text-ink/70">Your Answer</label>
                   <textarea
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
                     placeholder={speechSupported ? 'Click "Start Recording" to speak, or type your answer here...' : 'Type your answer here...'}
                     rows={7}
-                    className="w-full bg-surface-input border border-white/[0.12] rounded-md px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 resize-none transition-colors text-sm leading-relaxed"
+                    className="w-full bg-surface-input border border-[rgba(31,37,43,0.12)] rounded-md px-3 py-2.5 text-ink placeholder-ink/40 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 resize-none transition-colors text-sm leading-relaxed"
                   />
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-ink-muted">
+                    <p className="text-xs text-ink/60">
                       {transcript.trim().split(/\s+/).filter(Boolean).length} words
                     </p>
                     {(() => {
@@ -449,7 +439,7 @@ export default function InterviewPage() {
                       if (total === 0) return null
                       const top = rankFillers([{ total, breakdown }])[0]
                       return (
-                        <p className="text-xs text-yellow-600/80">
+                        <p className="text-xs text-yellow-700/80">
                           {total} filler word{total !== 1 ? 's' : ''} detected
                           {top ? <span className="text-yellow-700/60"> · &quot;{top.word}&quot; ×{top.count}</span> : null}
                         </p>
@@ -464,7 +454,7 @@ export default function InterviewPage() {
                     <button
                       onClick={isRecording ? stopRecording : startRecording}
                       className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-colors ${
-                        isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200'
+                        isRecording ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-[rgba(31,37,43,0.04)] hover:bg-[rgba(31,37,43,0.08)] border border-[rgba(31,37,43,0.1)] text-ink/80'
                       }`}
                     >
                       {isRecording ? (
@@ -476,7 +466,7 @@ export default function InterviewPage() {
                   )}
 
                   {transcript && (
-                    <button onClick={() => setTranscript('')} className="text-sm text-ink-muted hover:text-gray-300 transition-colors">
+                    <button onClick={() => setTranscript('')} className="text-sm text-ink/60 hover:text-ink transition-colors">
                       Clear
                     </button>
                   )}
@@ -486,7 +476,7 @@ export default function InterviewPage() {
                   <button
                     onClick={handleNextClick}
                     disabled={isSaving || isEvaluating || !transcript.trim()}
-                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-blacktop font-semibold px-4 py-2 rounded-md shadow-[0_4px_16px_rgba(255,90,31,0.4)] transition-all text-sm"
+                    className="flex items-center gap-2 bg-brand hover:bg-brand-hover disabled:bg-brand-hover/40 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-md shadow-[0_8px_20px_rgba(13,95,99,0.25)] transition-all text-sm"
                   >
                     {isSaving ? (
                       <>
@@ -507,7 +497,7 @@ export default function InterviewPage() {
             )}
 
             {error && (
-              <p className="text-red-400 text-sm bg-red-500/[0.08] border border-red-500/20 rounded-md px-3 py-2.5">
+              <p className="text-red-700 text-sm bg-red-500/[0.06] border border-red-500/20 rounded-md px-3 py-2.5">
                 {error}
               </p>
             )}

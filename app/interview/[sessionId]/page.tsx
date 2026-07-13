@@ -38,6 +38,7 @@ export default function InterviewPage() {
   const [error, setError] = useState('')
   const [webcamError, setWebcamError] = useState('')
   const [speechSupported, setSpeechSupported] = useState(true)
+  const [micError, setMicError] = useState('')
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
   const [timerExpired, setTimerExpired] = useState(false)
   const [feedback, setFeedback] = useState<{ score: number; didWell: string; improve: string } | null>(null)
@@ -47,6 +48,13 @@ export default function InterviewPage() {
   const webcamRef = useRef<HTMLVideoElement>(null)
   const recognitionRef = useRef<any>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  // Whether the user currently intends to be recording. Kept in a ref so the
+  // SpeechRecognition `onend` handler (which fires early on mobile) can decide
+  // whether to auto-restart the session or actually stop.
+  const wantRecordingRef = useRef(false)
+  // Whether mic permission has been granted (preflighted up front, separate
+  // from the record toggle).
+  const micReadyRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Load questions from Supabase ────────────────────────────
@@ -80,11 +88,24 @@ export default function InterviewPage() {
   useEffect(() => {
     async function startWebcam() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        // Request camera + mic together so mic permission is granted up front,
+        // separately from the record toggle. Keep video for the preview and
+        // release the mic track immediately — SpeechRecognition acquires its own.
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        stream.getAudioTracks().forEach((t) => t.stop())
+        micReadyRef.current = true
         streamRef.current = stream
         if (webcamRef.current) webcamRef.current.srcObject = stream
       } catch {
-        setWebcamError('Webcam not available or permission denied.')
+        // Mic (or camera) denied — fall back to video-only so the preview still
+        // works; recording will re-request mic and surface an error if needed.
+        try {
+          const videoOnly = await navigator.mediaDevices.getUserMedia({ video: true })
+          streamRef.current = videoOnly
+          if (webcamRef.current) webcamRef.current.srcObject = videoOnly
+        } catch {
+          setWebcamError('Webcam not available or permission denied.')
+        }
       }
     }
     startWebcam()
@@ -94,6 +115,7 @@ export default function InterviewPage() {
     }
 
     return () => {
+      wantRecordingRef.current = false
       streamRef.current?.getTracks().forEach((t) => t.stop())
       recognitionRef.current?.stop()
     }
@@ -121,8 +143,9 @@ export default function InterviewPage() {
   }, [currentIndex, isLoading, questions.length, timerResetKey])
 
   // ── Speech recognition ───────────────────────────────────────
-  const startRecording = useCallback(() => {
-    if (!speechSupported) return
+  // Build + start a recognition session. Separated so `onend` can restart it
+  // on mobile without re-running the permission flow.
+  const beginRecognition = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SR()
     recognition.continuous = true
@@ -135,14 +158,64 @@ export default function InterviewPage() {
       }
       if (final) setTranscript((prev) => prev + final)
     }
-    recognition.onerror = () => setIsRecording(false)
-    recognition.onend = () => setIsRecording(false)
+    recognition.onerror = (event: any) => {
+      // Fatal permission errors: stop and tell the user. Transient ones
+      // (no-speech, aborted, network blips) fall through to onend's restart.
+      if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+        wantRecordingRef.current = false
+        micReadyRef.current = false
+        setMicError('Microphone access was denied. Allow it for this site in your browser settings, or type your answer below.')
+        setIsRecording(false)
+      }
+    }
+    recognition.onend = () => {
+      // Mobile browsers (especially iOS) end the session early even with
+      // continuous = true. While the user still intends to record, restart to
+      // emulate a continuous session instead of stopping — the core mobile fix.
+      if (wantRecordingRef.current) {
+        try {
+          recognition.start()
+        } catch {
+          /* start() throws if it is already (re)starting — safe to ignore */
+        }
+      } else {
+        setIsRecording(false)
+      }
+    }
     recognitionRef.current = recognition
-    recognition.start()
+    try {
+      recognition.start()
+    } catch {
+      wantRecordingRef.current = false
+      setIsRecording(false)
+    }
+  }, [])
+
+  const startRecording = useCallback(async () => {
+    if (!speechSupported) return
+    setMicError('')
+    // Mic permission is handled separately from the toggle. If the up-front
+    // preflight didn't grant it, request it once here before recording. When it
+    // was already granted, this branch is skipped so recognition.start() still
+    // runs inside the tap gesture (important for mobile Safari).
+    if (!micReadyRef.current) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true })
+        s.getTracks().forEach((t) => t.stop())
+        micReadyRef.current = true
+      } catch {
+        setMicError('Microphone access is blocked. Allow mic access for this site, or type your answer below.')
+        return
+      }
+    }
+    wantRecordingRef.current = true
     setIsRecording(true)
-  }, [speechSupported])
+    beginRecognition()
+  }, [speechSupported, beginRecognition])
 
   const stopRecording = useCallback(() => {
+    // Clear intent first so onend does not auto-restart the session.
+    wantRecordingRef.current = false
     recognitionRef.current?.stop()
     setIsRecording(false)
   }, [])
@@ -157,6 +230,7 @@ export default function InterviewPage() {
     setIsSaving(true)
 
     // Stop recording if active
+    wantRecordingRef.current = false
     recognitionRef.current?.stop()
     setIsRecording(false)
     clearInterval(timerRef.current!)
@@ -517,6 +591,11 @@ export default function InterviewPage() {
               </>
             )}
 
+            {micError && (
+              <p className="text-amber-700 text-sm bg-amber-500/[0.08] border border-amber-500/25 rounded-md px-3 py-2.5">
+                {micError}
+              </p>
+            )}
             {error && (
               <p className="text-red-700 text-sm bg-red-500/[0.06] border border-red-500/20 rounded-md px-3 py-2.5">
                 {error}

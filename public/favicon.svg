@@ -1,9 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- INTERIM Teal Glass favicon: flat single-color mark echoing RunbackLogoChip
-       + the Source Serif wordmark. Replace with the production flat mark
-       (see PR asset spec) once available. -->
-  <rect width="32" height="32" rx="8" fill="#0D5F63" />
-  <text x="16" y="17" text-anchor="middle" dominant-baseline="central"
-        font-family="'Source Serif 4', Georgia, 'Times New Roman', serif"
-        font-size="21" font-weight="700" fill="#FFFFFF">R</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0D5F63" stroke="none">
+  <!-- Runback "rewind" double-chevron mark (run it back), Carbon Teal. -->
+  <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
+  <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
 </svg>

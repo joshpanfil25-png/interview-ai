@@ -19,12 +19,13 @@ const NAV_LINKS: { label: string; href?: string }[] = [
 
 export default function Marketing() {
   const [activeLink, setActiveLink] = useState('Home')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <main className="relative min-h-screen overflow-x-hidden animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6] text-ink">
       {/* Nav — an actual glass panel, tying the chrome to the same material as the cards */}
-      <nav className="relative z-2 flex items-center justify-between gap-6 px-6 py-3.5 mx-5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+      <nav className="relative z-20 flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 mx-5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0" onClick={() => setMenuOpen(false)}>
           <RunbackLogoChip size={34} />
           <GlassWordmark className="text-lg" />
         </Link>
@@ -51,10 +52,62 @@ export default function Marketing() {
             )
           })}
         </div>
-        <div className="flex gap-3 items-center shrink-0">
-          <NavAuth />
-          <PressButton primary href="/get-started" className="px-4.5 py-2.5">Get Started</PressButton>
+        <div className="flex gap-2 sm:gap-3 items-center shrink-0">
+          {/* Sign in lives on the bar at md+, and inside the mobile menu below md */}
+          <div className="hidden md:block">
+            <NavAuth />
+          </div>
+          <PressButton primary href="/get-started" className="px-3.5 py-2 sm:px-4.5 sm:py-2.5">Get Started</PressButton>
+          {/* Hamburger — small screens only */}
+          <button
+            type="button"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-[rgba(31,37,43,0.12)] text-ink hover:bg-[rgba(31,37,43,0.04)] transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M6 18 18 6" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile dropdown menu — the collapsed nav links + sign in */}
+        {menuOpen && (
+          <div className="md:hidden absolute top-full right-0 mt-2 w-56 rounded-2xl bg-[rgba(255,255,255,0.92)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.85)] shadow-[0_16px_40px_rgba(31,37,43,0.12)] p-2 animate-fade-in">
+            {NAV_LINKS.map((l) =>
+              l.href ? (
+                <Link
+                  key={l.label}
+                  href={l.href}
+                  onClick={() => { setActiveLink(l.label); setMenuOpen(false) }}
+                  className={`block px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    activeLink === l.label ? 'text-brand font-bold bg-brand/[0.06]' : 'text-ink font-medium hover:bg-[rgba(31,37,43,0.04)]'
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <button
+                  key={l.label}
+                  type="button"
+                  onClick={() => { setActiveLink(l.label); setMenuOpen(false) }}
+                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm text-ink font-medium hover:bg-[rgba(31,37,43,0.04)] transition-colors"
+                >
+                  {l.label}
+                </button>
+              )
+            )}
+            <div className="h-px my-2 bg-[rgba(31,37,43,0.08)]" />
+            <div className="px-1 pb-1">
+              <NavAuth />
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero — asymmetric split, left-aligned copy, mark bleeding off the right edge */}
@@ -88,8 +141,7 @@ export default function Marketing() {
           <img
             src="/teal-glass/logo/runback-glass-monogram.png"
             alt="Runback glass mark"
-            className="rb-float relative w-[260px] sm:w-[480px] max-w-none object-contain"
-            style={{ animationDelay: '1s' }}
+            className="relative w-[260px] sm:w-[480px] max-w-none object-contain"
           />
         </div>
       </section>

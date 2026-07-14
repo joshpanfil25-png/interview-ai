@@ -30,16 +30,25 @@ export function GlassWordmark({ className = 'text-lg' }: { className?: string })
   return <span className={`rb-wordmark ${className}`}>Runback</span>
 }
 
+/**
+ * Runback brand mark — the "rewind" double-chevron (◀◀, "run it back"), in
+ * Carbon Teal via the brand token. Same shape as the favicon so the tab mark
+ * and the nav mark stay identical. (The glassy 3D "R" arrow remains hero-only
+ * decorative art.)
+ */
 export function RunbackLogoChip({ size = 30, className = '' }: { size?: number; className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/teal-glass/logo/runback-glass-icon.png"
-      alt="Runback"
+    <svg
       width={size}
       height={size}
-      className={`rounded-lg object-cover shrink-0 shadow-[0_4px_10px_rgba(13,95,99,0.15)] ${className}`}
-    />
+      viewBox="0 0 24 24"
+      role="img"
+      aria-label="Runback"
+      className={`shrink-0 fill-brand ${className}`}
+    >
+      <path d="M11 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 11 5.5z" />
+      <path d="M22 5.5v13a1 1 0 0 1-1.6.8l-8-6.5a1 1 0 0 1 0-1.6l8-6.5A1 1 0 0 1 22 5.5z" />
+    </svg>
   )
 }
 

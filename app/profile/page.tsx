@@ -101,7 +101,7 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6]">
       {/* Header */}
       <header className="relative z-2">
-        <nav className="max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-3.5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <nav className="rb-glass-nav max-w-[1000px] mx-auto w-full flex items-center justify-between px-6 py-3.5 mt-4 rounded-2xl">
           <Link href="/" className="flex items-center gap-2.5">
             <RunbackLogoChip size={32} />
             <GlassWordmark className="text-lg" />

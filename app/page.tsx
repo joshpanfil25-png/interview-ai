@@ -24,7 +24,7 @@ export default function Marketing() {
   return (
     <main className="relative min-h-screen overflow-x-hidden animate-fade-in bg-gradient-to-b from-white to-[#F1F4F6] text-ink">
       {/* Nav — an actual glass panel, tying the chrome to the same material as the cards */}
-      <nav className="relative z-20 flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 mx-5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+      <nav className="rb-glass-nav relative z-20 flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 mx-5 mt-4 rounded-2xl">
         <Link href="/" className="flex items-center gap-2.5 shrink-0" onClick={() => setMenuOpen(false)}>
           <RunbackLogoChip size={34} />
           <GlassWordmark className="text-lg" />

@@ -120,6 +120,18 @@ body {
   .rb-blob-flow, .rb-float, .rb-rise-in { animation: none; }
 }
 
+/* Top nav material — same teal-glass gloss as the logo chip (teal gradient
+   sheen + bright top highlight) instead of plain white glass. Background
+   respects the element's border-radius on its own, so no overflow:hidden
+   here — nav dropdowns (NavAuth) still overflow the bar freely. */
+.rb-glass-nav {
+  background: linear-gradient(135deg, rgba(79, 166, 160, 0.2) 0%, rgba(255, 255, 255, 0.6) 42%, rgba(168, 224, 221, 0.28) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 30px rgba(31, 37, 43, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -14px 24px -18px rgba(13, 95, 99, 0.35);
+}
+
 /* Scrollbar — neutral, minimal */
 ::-webkit-scrollbar {
   width: 8px;

@@ -128,7 +128,7 @@ export function PressButton({
 /** Shared frosted-glass top nav, used identically on Marketing and Profile. */
 export function GlassNav({ children }: { children: React.ReactNode }) {
   return (
-    <nav className="relative z-2 flex items-center justify-between gap-6 px-6 py-3.5 mx-5 mt-4 rounded-2xl bg-[rgba(255,255,255,0.55)] backdrop-blur-[22px] border border-[rgba(255,255,255,0.8)] shadow-[0_12px_30px_rgba(31,37,43,0.06),inset_0_1px_0_rgba(255,255,255,0.9)]">
+    <nav className="rb-glass-nav relative z-2 flex items-center justify-between gap-6 px-6 py-3.5 mx-5 mt-4 rounded-2xl">
       {children}
     </nav>
   )

@@ -140,6 +140,42 @@ export async function POST(req: NextRequest) {
     const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    // Accounting: fixed 8-question set, skipping LLM generation entirely.
+    // Requested as a hardcoded override, not a generalizable pattern — do not
+    // extend this branch to other verticals without a separate decision to do so.
+    if (interviewType === 'Accounting') {
+      const questions = [
+        { type: 'behavioral', question: 'Tell me about yourself.' },
+        { type: 'role-specific', question: `Why do you want to work at ${company.trim() || 'this company'}?` },
+        { type: 'role-specific', question: 'Why are you interested in accounting?' },
+        { type: 'behavioral', question: 'Tell me about a time you had to work with a difficult teammate. How did you handle the situation?' },
+        { type: 'behavioral', question: 'Tell me about a time you had to manage multiple deadlines. How did you prioritize your responsibilities?' },
+        { type: 'behavioral', question: 'Tell me about a time you made a mistake. What did you do to correct it?' },
+        { type: 'behavioral', question: 'Tell me about a time you had to explain complicated information to someone who was unfamiliar with the subject.' },
+        { type: 'behavioral', question: 'Tell me about a time you received constructive feedback. How did you respond and apply it?' },
+      ] as const
+
+      const { error: sessionError } = await supabase.from('sessions').insert({
+        id: sessionId,
+        company,
+        role,
+        linkedin_url: linkedinUrl || null,
+        user_id: user?.id ?? null,
+      })
+      if (sessionError) throw new Error(`Supabase session error: ${sessionError.message}`)
+
+      const questionRows = questions.map((q, i) => ({
+        session_id: sessionId,
+        question_text: q.question,
+        question_type: q.type as 'behavioral' | 'role-specific' | 'curveball',
+        order_index: i,
+      }))
+      const { error: questionsError } = await supabase.from('questions').insert(questionRows)
+      if (questionsError) throw new Error(`Supabase questions error: ${questionsError.message}`)
+
+      return NextResponse.json({ success: true, sessionId })
+    }
+
     const verticalGuidance: Record<string, string> = {
       'Finance':
         'Finance spans distinct sub-fields — corporate finance/FP&A, buy-side investing, and markets — so calibrate to the stated role rather than treating it as one thing. The role-specific question should force a defensible point of view, not a definition: how a change in a key assumption flows through a model and why, how to think about a company’s capital structure, or a short "walk me through an investment or a stock you would pitch, and the two or three reasons the market is mispricing it" prompt. Push for real numbers and a clear recommendation with a stated risk, and reward quantitative judgment under ambiguity over recited valuation vocabulary. (Investment Banking and Private Equity have their own verticals for deal and LBO technicals.)',

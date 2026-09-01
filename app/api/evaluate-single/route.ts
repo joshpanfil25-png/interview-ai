@@ -14,16 +14,20 @@ export type SingleFeedback = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, answer } = await req.json()
+    const { question, answer, questionType } = await req.json()
     if (!question || !answer) {
       return NextResponse.json({ error: 'Missing question or answer' }, { status: 400 })
     }
 
+    const isMotivationOrSelfKnowledge = /why do you want to work|why do you want to attend|what do you want to do|what draws you/i.test(question)
+
     const prompt = `You are a supportive, encouraging interview coach giving instant feedback on a single interview answer. Picture a mentor who is genuinely in the candidate's corner — you want to build their confidence while helping them grow, never to tear them down.
 
-Question: ${question}
+Question${questionType ? ` [${questionType}]` : ''}: ${question}
 Answer: ${answer}
 
+Reward sound judgment, specificity, accountability, genuine self-awareness, initiative, coachability, and honest reflection — not length, buzzwords, or raw confidence/polish for its own sake.
+${isMotivationOrSelfKnowledge ? 'This looks like a motivation or self-knowledge question ("why this company," "what do you want to do"). A one-word or generic answer (e.g. "consulting," "I like finance") should score LOW — employers specifically screen for genuine, specific motivation, and "improve" should name that directly rather than softening it into generic advice.\n' : ''}
 Lead with sincere recognition of what worked, then frame the next step as an opportunity to get even stronger. Stay honest and specific — don't paper over real gaps — but keep the delivery warm and motivating. Scoring floor — this overrides the encouraging tone above: if the answer is empty, a single stray character, gibberish, or otherwise does not genuinely attempt to answer the question, score it 0 and do not manufacture praise for it (leave didWell empty or state plainly that there was no attempt to assess). Reserve 1-2 only for a real but very weak attempt. Return ONLY a valid JSON object with no extra text:
 {
   "score": <integer 0-10>,

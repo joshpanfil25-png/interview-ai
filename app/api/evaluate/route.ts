@@ -61,7 +61,10 @@ export async function POST(req: NextRequest) {
     // exactly as before.
     const supabase = await createSupabaseServerClient()
 
-    // Fetch questions
+    // Fetch questions (question_type included — used below to calibrate
+    // grading per question, e.g. the opener/motivation/self-knowledge slots
+    // are not STAR-shaped by design, so they need different calibration than
+    // a behavioral story or the curveball).
     const { data: questions, error: qError } = await supabase
       .from('questions')
       .select('*')
@@ -85,12 +88,23 @@ export async function POST(req: NextRequest) {
       return {
         question: q.question_text,
         answer: answer?.answer_text || '[No answer provided]',
+        type: q.question_type as string,
       }
     })
 
     const prompt = `You are a supportive, experienced interview coach — the kind of mentor who genuinely believes in the candidate and wants to see them succeed. Evaluate the following mock interview answers with warmth and encouragement. Your feedback should build the candidate up while staying honest and specific: always lead with what they did well, and frame every area for growth as an opportunity to improve rather than a failure. Keep the honesty, soften the delivery.
 
-${qaPairs.map((qa, i) => `Q${i + 1}: ${qa.question}\nA${i + 1}: ${qa.answer}`).join('\n\n')}
+${qaPairs.map((qa, i) => `Q${i + 1} [${qa.type}]: ${qa.question}\nA${i + 1}: ${qa.answer}`).join('\n\n')}
+
+What real interviewers actually screen for at entry level — reward this, not polish:
+- Sound judgment, specificity, accountability, genuine self-awareness, evidence of initiative, coachability, honest reflection on mistakes, real motivation (specific reasons for THIS job/company, a real answer to what they want to do), appropriate escalation and role awareness, and empathy where relevant.
+- Do NOT over-reward length, corporate buzzwords, raw confidence/polish, or a perfectly structured STAR response for its own sake. Many people-scenarios have multiple defensible answers — do not grade against one single "ideal" answer.
+
+Calibrate to what each question actually is (the bracketed label after each Qn above is its type, but judge by the question's actual content, not just the label):
+- The opener ("Tell me about yourself"): grade on thoroughness without rambling, an appropriate time horizon (their story arc, not their whole life), and whether they connect their background to this specific role — not on STAR structure.
+- Motivation / self-knowledge questions (typically Q2-Q3 — "why do you want to work here," "what do you want to do"): a one-word or generic answer ("consulting," "I like finance") scores LOW on Relevance and Clarity, with coaching feedback explicitly explaining that employers specifically screen for genuine, specific motivation and self-knowledge, and a generic answer is exactly what a real interviewer flags.
+- The two short behavioral questions: grade for the judgment/initiative/coachability signals above, using the full STAR rubric normally.
+- The curveball: grade on resourcefulness and judgment, not a "correct" answer.
 
 For each answer, do two things:
 
@@ -99,15 +113,15 @@ For each answer, do two things:
    Score each dimension against this rubric, not a gut feeling:
    - Clarity — is the point easy to follow and does the answer lead with it, or is it buried, rambling, or hard to parse?
    - Confidence — does the language read as decisive and grounded (owns "I", commits to a position), or hedged, vague, and uncertain?
-   - Structure — does the answer follow a recognizable shape (STAR for behavioral, a clear framework or logical progression for technical/case), or does it wander?
-   - Relevance — does it actually answer the question asked with concrete substance (specific numbers, names, mechanisms, examples), or is it generic filler or off-topic?
+   - Structure — for the two behavioral questions and the curveball, does the answer follow a recognizable shape (STAR, or a clear logical progression), or does it wander? For the opener and the motivation/self-knowledge questions, judge structure as: does the answer stay organized and on-point for a non-story answer, not whether it hits STAR beats it was never going to have.
+   - Relevance — does it actually answer the question asked with concrete substance (specific reasons, numbers, names, examples), or is it generic filler or off-topic? This is where a generic motivation answer gets penalized hardest.
    Calibrate the number to the evidence: 8-10 = strong (specific, well-structured, directly on-point); 5-7 = solid but with real gaps; 2-4 = weak, vague, or only partially responsive; 0-1 = essentially no genuine attempt. Do not cluster every answer in the 6-8 band — spread scores to reflect real differences.
 
 2. Analyze whether the answer uses the STAR method (Situation, Task, Action, Result). For each of the four components, rate it as:
    - "present" — clearly and specifically addressed
    - "weak" — hinted at or vague but not fully developed
    - "missing" — entirely absent
-   Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of warm, constructive coaching on how to strengthen the STAR structure for that specific answer.
+   The opener and the motivation/self-knowledge questions are not story-shaped by design — for those, do not penalize a missing Task/Action/Result as if it were a failed behavioral story; rate Situation/Task/Action/Result "missing" where genuinely absent, but keep the starCoaching sentence focused on what actually matters for that question type (thoroughness and connection to the role for the opener; specificity for motivation/self-knowledge) rather than "add a Result." For the two behavioral questions and the curveball, apply the full STAR rubric normally. Then give a starScore (0–4) counting how many components are "present" (not "weak"). Finally, write one sentence of warm, constructive coaching on how to strengthen that specific answer.
 
 Also identify the candidate's single most valuable blind spot — the one pattern across their answers that they probably haven't noticed themselves, and that would help them most to become aware of. This should feel like a genuinely useful insight from a coach who was paying close attention: specific and personal, like it was written just for them. It must be grounded in something actually present in their answers (a real pattern, not a generic observation).
 

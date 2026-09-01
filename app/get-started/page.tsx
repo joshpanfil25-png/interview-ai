@@ -14,13 +14,17 @@ import { useUser } from '@/lib/useUser'
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowserClient'
 import { Glass, GlassWordmark, RunbackLogoChip, TealBlob } from '@/app/components/teal-glass'
 
-// Order groups related verticals so the (now long) dropdown stays scannable.
-// Every entry here must have a matching key in `verticalGuidance` in
-// app/api/generate-questions/route.ts, and school-admissions entries must also
-// be listed in SCHOOL_VERTICALS below (and in the route).
+// Narrowed to business verticals only (2026 platform-focus overhaul). The
+// removed verticals (Tech, Nursing, Teaching, Law School, Aviation, Skilled
+// Trades, Healthcare, Government, etc.) are NOT deleted — their guidance
+// lives on, dormant, in DORMANT_VERTICAL_GUIDANCE in
+// app/api/generate-questions/route.ts, ready to re-add here if we expand
+// scope again. Every entry here must have a matching key in
+// `verticalGuidance` in app/api/generate-questions/route.ts, and
+// school-admissions entries must also be listed in SCHOOL_VERTICALS below
+// (and in the route).
 const INTERVIEW_TYPES = [
   'General',
-  // Business, finance & professional services
   'Finance',
   'Investment Banking',
   'Private Equity',
@@ -29,49 +33,15 @@ const INTERVIEW_TYPES = [
   'Accounting',
   'Audit',
   'Real Estate',
-  // Product, engineering, data & design
-  'Tech',
-  'Software Engineering',
-  'Engineering (Non-Software)',
-  'Product Management',
-  'Project / Program Management',
-  'Data / Analytics',
-  'Design (UX / Product)',
-  'Cybersecurity',
-  // Go-to-market, people & operations
   'Marketing',
   'Sales',
   'Customer Success',
-  'Media / Journalism / PR',
   'Human Resources',
   'Operations',
-  // Public sector, mission & service
-  'Government',
-  'Nonprofit',
-  'Law / Legal',
-  'Healthcare',
-  'Nursing',
-  'Medical Residency / Fellowship',
-  'Social Work / Counseling',
-  'Teaching / Education',
-  'Aviation / Pilot',
-  'Skilled Trades',
-  'Retail / Hospitality',
-  'Hospitality & Culinary Management',
-  'Criminal Justice / Law Enforcement',
-  // Arts, environment & the built world
-  'Architecture / Urban Planning',
-  'Fine & Performing Arts',
-  'Environmental & Sustainability',
-  // Founders & academia
-  'Startup / Founder / VC',
-  'Academia / Faculty',
-  // School admissions (swaps Company/Role labels to School/Program)
-  'Pre-Med / Health Professional School',
-  'Pharmacy / Dental / Vet / PT School',
-  'Pre-Law / Law School',
+  'Product Management',
+  'Project / Program Management',
   'Business School / MBA',
-  'Graduate School (General)',
+  'Startup / Founder / VC',
   'Coffee Chat',
 ]
 
@@ -79,14 +49,9 @@ const INTERVIEW_TYPES = [
 // swaps the Company/Role labels to School/Program. Keep in sync with
 // SCHOOL_VERTICALS in app/api/generate-questions/route.ts.
 const SCHOOL_VERTICALS = new Set([
-  'Pre-Med / Health Professional School',
-  'Pre-Law / Law School',
-  'Graduate School (General)',
   'Business School / MBA',
-  'Pharmacy / Dental / Vet / PT School',
 ])
 
-const QUESTION_FOCUS_OPTIONS = ['Balanced', 'Behavioral-Heavy', 'Technical-Heavy'] as const
 const DIFFICULTY_OPTIONS = ['Easy', 'Medium', 'Hard'] as const
 
 // Minimum number of extracted characters we treat as a usable resume. Below
@@ -106,7 +71,6 @@ export default function GetStarted() {
   const router = useRouter()
   const { user } = useUser()
   const [interviewType, setInterviewType] = useState('General')
-  const [questionFocus, setQuestionFocus] = useState<(typeof QUESTION_FOCUS_OPTIONS)[number]>('Balanced')
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTY_OPTIONS)[number]>('Medium')
   const isSchoolVertical = SCHOOL_VERTICALS.has(interviewType)
   const [firstName, setFirstName] = useState('')
@@ -413,7 +377,7 @@ export default function GetStarted() {
       localStorage.setItem('sessionId', sessionId)
       localStorage.setItem(
         `session_meta_${sessionId}`,
-        JSON.stringify({ company, role, interviewType, questionFocus, difficulty, firstName, email })
+        JSON.stringify({ company, role, interviewType, difficulty, firstName, email })
       )
 
       // Phase 4 — persist this resume to the logged-in user's profile so it
@@ -431,7 +395,7 @@ export default function GetStarted() {
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId, interviewType, questionFocus, difficulty }),
+        body: JSON.stringify({ company, role, resumeText, linkedinUrl, sessionId, interviewType, difficulty }),
       })
 
       if (!res.ok) {
@@ -447,7 +411,6 @@ export default function GetStarted() {
           firstName: firstName.trim(),
           email: email.trim(),
           interviewType,
-          questionFocus,
           difficulty,
           company: company.trim(),
           role: role.trim(),
@@ -502,44 +465,23 @@ export default function GetStarted() {
               </div>
             </div>
 
-            {/* Question Focus + Difficulty */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-[12.5px] font-semibold text-ink mb-1.5">Question Focus</label>
-                <div className="relative">
-                  <select
-                    value={questionFocus}
-                    onChange={(e) => setQuestionFocus(e.target.value as (typeof QUESTION_FOCUS_OPTIONS)[number])}
-                    className={`${fieldClass} appearance-none cursor-pointer pr-10`}
-                  >
-                    {QUESTION_FOCUS_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                    <svg className="w-4 h-4 text-ink/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="block text-[12.5px] font-semibold text-ink mb-1.5">Difficulty</label>
-                <div className="relative">
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as (typeof DIFFICULTY_OPTIONS)[number])}
-                    className={`${fieldClass} appearance-none cursor-pointer pr-10`}
-                  >
-                    {DIFFICULTY_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                    <svg className="w-4 h-4 text-ink/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+            {/* Difficulty */}
+            <div>
+              <label className="block text-[12.5px] font-semibold text-ink mb-1.5">Difficulty</label>
+              <div className="relative">
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as (typeof DIFFICULTY_OPTIONS)[number])}
+                  className={`${fieldClass} appearance-none cursor-pointer pr-10`}
+                >
+                  {DIFFICULTY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                  <svg className="w-4 h-4 text-ink/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
               </div>
             </div>

@@ -274,6 +274,7 @@ export default function InterviewPage() {
         body: JSON.stringify({
           question: currentQuestion.question_text,
           answer: transcript.trim(),
+          questionType: currentQuestion.question_type,
         }),
       })
       const data = await res.json()
